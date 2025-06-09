@@ -1,3 +1,8 @@
+---
+description:
+globs:
+alwaysApply: true
+---
 # Product Requirements Document: T0 Chat
 
 ## 1. Overview
