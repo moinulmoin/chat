@@ -16,7 +16,7 @@ export default function SignInPage() {
         <p className="text-muted-foreground">Sign in to your account to continue</p>
         <Button onClick={() => {
           setIsLoading(true);
-          signIn("github", {
+          void signIn("github", {
             redirectTo: "/chat",
           });
         }}>

@@ -33,6 +33,7 @@
     "marked": "^15.0.12",
     "nanoid": "^5.1.5",
     "next": "15.3.3",
+    "oslo": "^1.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
