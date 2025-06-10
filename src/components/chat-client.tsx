@@ -1,18 +1,33 @@
 "use client";
 
 import { useAutoResume } from "@/hooks/use-auto-resume";
-import { chatData } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
 import { UIMessage } from "ai";
-import { ChatHeader } from "./chat-header";
 import { ChatInput } from "./chat-input";
 import ChatMessageContainer from "./chat-message-container";
 
-function ChatClient({ initialMessages }: { initialMessages: UIMessage[] }) {
-  const { messages, handleSubmit, status, experimental_resume, data, setMessages } = useChat({
+function ChatClient({
+  initialMessages,
+  chatId
+}: {
+  initialMessages: UIMessage[];
+  chatId?: string;
+}) {
+  const {
+    messages,
+    handleSubmit,
+    status,
+    experimental_resume,
+    data,
+    setMessages,
+    stop,
+    input,
+    setInput
+  } = useChat({
     initialMessages,
+    id: chatId!,
     experimental_prepareRequestBody: (options) => {
-      const lastMessage = options.messages[options.messages.length - 1];
+      const lastMessage = options.messages.at(-1);
       return {
         lastMessage,
         chatId: options.id
@@ -27,17 +42,21 @@ function ChatClient({ initialMessages }: { initialMessages: UIMessage[] }) {
     data,
     setMessages
   });
-  return (
-    <div className="flex flex-col h-screen bg-muted">
-      {/* Header */}
-      <ChatHeader user={chatData.user} />
 
+  return (
+    <>
       {/* Chat Messages */}
       <ChatMessageContainer messages={messages} status={status} />
 
       {/* Input Footer */}
-      <ChatInput onSubmit={handleSubmit} status={status} />
-    </div>
+      <ChatInput
+        onSubmit={handleSubmit}
+        status={status}
+        stop={stop}
+        input={input}
+        setInput={setInput}
+      />
+    </>
   );
 }
 

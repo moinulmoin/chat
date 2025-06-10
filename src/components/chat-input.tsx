@@ -11,28 +11,29 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Textarea } from "@/components/ui/textarea";
 import { chatData } from "@/lib/utils";
 import { ChatStatus } from "@/types";
-import { ArrowUp, Brain, ChevronDown, Globe, Paperclip } from "lucide-react";
-import { KeyboardEvent, MouseEvent, useRef } from "react";
+import { ArrowUp, Brain, ChevronDown, Globe, Paperclip, StopCircle } from "lucide-react";
+import { KeyboardEvent, MouseEvent } from "react";
 
 interface ChatInputProps {
   onSubmit: (e: React.FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement> | MouseEvent<HTMLButtonElement>) => void;
   placeholder?: string;
   status: ChatStatus;
+  stop: () => void;
+  input: string;
+  setInput: (input: string) => void;
 }
 
 export function ChatInput({
+  input,
+  setInput,
   onSubmit,
   placeholder = "How can t0Chat help?",
-  status
+  status,
+  stop
 }: ChatInputProps) {
-  const userInputRef = useRef<HTMLTextAreaElement>(null);
   const { settings } = chatData;
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement> | MouseEvent<HTMLButtonElement>) => {
-    if (status === "ready") {
-      onSubmit(e);
-    }
-  };
+  const isDisabled = status === "submitted" || status === "streaming";
 
   return (
     <div className="p-4">
@@ -40,24 +41,24 @@ export function ChatInput({
         <div className="rounded-2xl p-2 border shadow-sm bg-background">
           {/* Top Part: Textarea */}
           <form
-            id="chat-form"
             onSubmit={(e) => {
               e.preventDefault();
-              if (status === "ready") {
+              if (!isDisabled) {
                 onSubmit(e);
               }
             }}
             className="flex-1"
           >
             <Textarea
-              ref={userInputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
               placeholder={placeholder}
               className="w-full resize-none border-0 p-2 shadow-none bg-transparent text-base focus-visible:ring-0 focus-visible:ring-offset-0 h-auto"
               rows={1}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  if (status === "ready") {
+                  if (!isDisabled) {
                     onSubmit(e);
                   }
                 }
@@ -107,12 +108,10 @@ export function ChatInput({
 
               <IconButton
                 size="icon"
-                type="submit"
-                form="chat-form"
                 className="h-9 w-9 rounded-full"
-                icon={<ArrowUp className=" size-5" />}
+                icon={status === "streaming" ? <StopCircle className=" size-5" /> : <ArrowUp className=" size-5" />}
                 tooltip="Send message"
-                disabled={status !== "ready"}
+                onClick={isDisabled ? stop : onSubmit}
               />
             </div>
           </div>
