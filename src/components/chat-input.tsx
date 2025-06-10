@@ -11,7 +11,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Textarea } from "@/components/ui/textarea";
 import { chatData } from "@/lib/utils";
 import { ChatStatus } from "@/types";
-import { ArrowUp, Brain, ChevronDown, Globe, Paperclip, StopCircle } from "lucide-react";
+import { ArrowUp, Brain, ChevronDown, Globe, Paperclip, Square } from "lucide-react";
 import { KeyboardEvent, MouseEvent } from "react";
 
 interface ChatInputProps {
@@ -109,7 +109,7 @@ export function ChatInput({
               <IconButton
                 size="icon"
                 className="h-9 w-9 rounded-full"
-                icon={status === "streaming" ? <StopCircle className=" size-5" /> : <ArrowUp className=" size-5" />}
+                icon={isDisabled ? <Square className=" size-4" /> : <ArrowUp className=" size-5" />}
                 tooltip="Send message"
                 onClick={isDisabled ? stop : onSubmit}
               />

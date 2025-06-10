@@ -12,8 +12,8 @@ export default function ChatMessageContainer({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: status === 'streaming' ? 'auto' : 'smooth' });
+  }, [messages, status]);
 
   return (
     <main className="flex-1 overflow-y-auto p-6">

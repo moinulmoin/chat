@@ -7,6 +7,6 @@ const ChatClient = dynamic(() => import("@/components/chat-client").then((mod) =
   ssr: false
 });
 
-export default function SingleChatPage({ chatId, initialMessages }: { chatId: string, initialMessages: UIMessage[] }) {
-  return <ChatClient initialMessages={initialMessages} chatId={chatId} />;
+export default function SingleChatPage({ initialMessages, chatId }: { initialMessages: UIMessage[], chatId: string }) {
+  return <ChatClient initialMessages={initialMessages} chatId={chatId as string} />;
 }

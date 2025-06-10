@@ -13,7 +13,6 @@ interface ChatMessageProps {
 
 export function ChatMessage({ status, message }: ChatMessageProps) {
 
-  console.log(message);
   if (message.role === "user") {
     const text = message.parts.map((part) => (part.type === "text" ? part.text : "")).join("");
     return (

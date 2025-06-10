@@ -11,7 +11,7 @@ function ChatClient({
   chatId
 }: {
   initialMessages: UIMessage[];
-  chatId?: string;
+  chatId: string;
 }) {
   const {
     messages,
@@ -22,15 +22,15 @@ function ChatClient({
     setMessages,
     stop,
     input,
-    setInput
+    setInput,
   } = useChat({
     initialMessages,
-    id: chatId!,
-    experimental_prepareRequestBody: (options) => {
-      const lastMessage = options.messages.at(-1);
+    id: chatId,
+    experimental_prepareRequestBody: (body) => {
+      const lastMessage = body.messages.at(-1);
       return {
         lastMessage,
-        chatId: options.id
+        id: body.id
       };
     }
   });

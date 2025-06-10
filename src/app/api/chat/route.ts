@@ -121,8 +121,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { chatId, lastMessage } = (await request.json()) as {
-      chatId: string;
+    const { id: chatId, lastMessage } = (await request.json()) as {
+      id: string;
       lastMessage: UIMessage;
     };
 
@@ -164,7 +164,7 @@ export async function POST(request: Request) {
     await saveLastMessage({
       chatId,
       role: lastMessage.role,
-      parts: lastMessage.parts,
+      parts: lastMessage.parts
     });
 
     // Record this new stream so we can resume later
@@ -205,7 +205,7 @@ export async function POST(request: Request) {
                   id: assistantId,
                   chatId,
                   role: assistantMessage.role,
-                  parts: assistantMessage.parts,
+                  parts: assistantMessage.parts
                 });
               } catch (_) {
                 console.error("Failed to save chat");
