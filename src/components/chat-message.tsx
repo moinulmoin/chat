@@ -2,7 +2,8 @@
 
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { IconButton } from "@/components/ui/icon-button";
-import { ChatStatus, UIMessage } from "ai";
+import { ChatStatus } from "@/types";
+import { UIMessage } from "ai";
 import { Clipboard, RotateCw, Split } from "lucide-react";
 
 interface ChatMessageProps {
@@ -58,7 +59,7 @@ export function ChatMessage({ status, message }: ChatMessageProps) {
               icon={<Split className="size-3.5" />}
               tooltip="Branching"
             />
-            <div className="text-xs text-muted-foreground">{JSON.stringify(message.metadata)}</div>
+            {/* <div className="text-xs text-muted-foreground">{JSON.stringify(message.metadata)}</div> */}
           </div>
         )}
       </div>

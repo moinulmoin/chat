@@ -1,43 +1,42 @@
 "use client";
 
-import { metadataSchema } from "@/app/api/chat/metadata-schema";
+import { useAutoResume } from "@/hooks/use-auto-resume";
 import { chatData } from "@/lib/utils";
-import { zodSchema } from "@ai-sdk/provider-utils";
-import { UIMessage, useChat } from "@ai-sdk/react";
-import { useEffect, useRef } from "react";
+import { useChat } from "@ai-sdk/react";
+import { UIMessage } from "ai";
 import { ChatHeader } from "./chat-header";
 import { ChatInput } from "./chat-input";
-import { ChatMessage } from "./chat-message";
+import ChatMessageContainer from "./chat-message-container";
 
 function ChatClient({ initialMessages }: { initialMessages: UIMessage[] }) {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const { messages, sendMessage, status } = useChat({
-    messageMetadataSchema: zodSchema(metadataSchema),
-    messages: initialMessages
+  const { messages, handleSubmit, status, experimental_resume, data, setMessages } = useChat({
+    initialMessages,
+    experimental_prepareRequestBody: (options) => {
+      const lastMessage = options.messages[options.messages.length - 1];
+      return {
+        lastMessage,
+        chatId: options.id
+      };
+    }
   });
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
+  useAutoResume({
+    autoResume: true,
+    initialMessages,
+    experimental_resume,
+    data,
+    setMessages
+  });
   return (
     <div className="flex flex-col h-screen bg-muted">
       {/* Header */}
       <ChatHeader user={chatData.user} />
 
       {/* Chat Messages */}
-      <main className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-2xl mx-auto space-y-4">
-          {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} status={status} />
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </main>
+      <ChatMessageContainer messages={messages} status={status} />
 
       {/* Input Footer */}
-      <ChatInput onSubmit={(text) => sendMessage({ text })} status={status} />
+      <ChatInput onSubmit={handleSubmit} status={status} />
     </div>
   );
 }

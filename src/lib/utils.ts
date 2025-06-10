@@ -1,4 +1,4 @@
-import { ChatState } from "ai";
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -34,10 +34,3 @@ export const chatData = {
     }
   }
 }
-
-
-// const chatStore = new ChatState({
-//   api: '/api/chat', // your chat endpoint
-//   maxSteps: 5, // optional: limit LLM calls in tool chains
-//   chats: {}, // optional: preload previous chat sessions
-// });

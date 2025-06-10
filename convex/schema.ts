@@ -6,23 +6,33 @@ const schema = defineSchema({
   ...authTables,
   chats: defineTable({
     userId: v.id("users"),
+    title: v.optional(v.string()),
     createdAt: v.number(),
-    updatedAt: v.number(),
-    messages: v.array(
-      v.object({
-        id: v.id("messages"),
-        content: v.string(),
-        createdAt: v.number()
-      })
-    )
-  })
-    .index("by_user", ["userId"]),
+    updatedAt: v.number()
+  }).index("by_user", ["userId"]),
+  streams: defineTable({
+    chatId: v.id("chats")
+  }).index("by_chat", ["chatId"]),
   messages: defineTable({
     chatId: v.id("chats"),
-    content: v.string(),
-    createdAt: v.number()
+    role: v.string(),
+    parts: v.array(v.any()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number()
   })
     .index("by_chat", ["chatId"])
+    .index("by_chat_created", ["chatId", "createdAt"]),
+
+  attachments: defineTable({
+    userId: v.id("users"),
+    messageId: v.id("messages"),
+    storageId: v.string(), // To link to Convex file storage
+    fileName: v.string(),
+    fileType: v.string(), // e.g., "application/pdf", "image/png"
+    createdAt: v.number(),
+    updatedAt: v.number()
+  }).index("by_message", ["messageId"])
 });
 
 export default schema;

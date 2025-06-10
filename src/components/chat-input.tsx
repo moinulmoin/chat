@@ -10,27 +10,27 @@ import {
 import { IconButton } from "@/components/ui/icon-button";
 import { Textarea } from "@/components/ui/textarea";
 import { chatData } from "@/lib/utils";
-import { ChatStatus } from "ai";
+import { ChatStatus } from "@/types";
 import { ArrowUp, Brain, ChevronDown, Globe, Paperclip } from "lucide-react";
-import { useRef } from "react";
+import { KeyboardEvent, MouseEvent, useRef } from "react";
 
 interface ChatInputProps {
-  onSubmit: (text: string) => void;
+  onSubmit: (e: React.FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement> | MouseEvent<HTMLButtonElement>) => void;
   placeholder?: string;
   status: ChatStatus;
 }
 
-export function ChatInput({ onSubmit, placeholder = "How can t0Chat help?", status }: ChatInputProps) {
+export function ChatInput({
+  onSubmit,
+  placeholder = "How can t0Chat help?",
+  status
+}: ChatInputProps) {
   const userInputRef = useRef<HTMLTextAreaElement>(null);
   const { settings } = chatData;
 
-  const handleSubmit = () => {
-    const text = userInputRef.current?.value || "";
-    if (text.trim()) {
-      onSubmit(text);
-      if (userInputRef.current) {
-        userInputRef.current.value = "";
-      }
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement> | MouseEvent<HTMLButtonElement>) => {
+    if (status === "ready") {
+      onSubmit(e);
     }
   };
 
@@ -40,9 +40,12 @@ export function ChatInput({ onSubmit, placeholder = "How can t0Chat help?", stat
         <div className="rounded-2xl p-2 border shadow-sm bg-background">
           {/* Top Part: Textarea */}
           <form
+            id="chat-form"
             onSubmit={(e) => {
               e.preventDefault();
-              handleSubmit();
+              if (status === "ready") {
+                onSubmit(e);
+              }
             }}
             className="flex-1"
           >
@@ -54,7 +57,9 @@ export function ChatInput({ onSubmit, placeholder = "How can t0Chat help?", stat
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  handleSubmit();
+                  if (status === "ready") {
+                    onSubmit(e);
+                  }
                 }
               }}
             />
@@ -65,8 +70,8 @@ export function ChatInput({ onSubmit, placeholder = "How can t0Chat help?", stat
               <IconButton
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 flex-shrink-0 rounded-full"
-                icon={<Paperclip size={20} />}
+                className="h-8 w-8 flex-shrink-0 rounded-full border"
+                icon={<Paperclip className="size-4" />}
                 tooltip="Attach file"
               />
 
@@ -79,7 +84,7 @@ export function ChatInput({ onSubmit, placeholder = "How can t0Chat help?", stat
 
               {settings.features.think && (
                 <Button variant="outline" size="sm" className="rounded-2xl">
-                  <Brain size={15} className="" />
+                  <Brain size={14} className="" />
                   Think
                 </Button>
               )}
@@ -102,10 +107,12 @@ export function ChatInput({ onSubmit, placeholder = "How can t0Chat help?", stat
 
               <IconButton
                 size="icon"
+                type="submit"
+                form="chat-form"
                 className="h-9 w-9 rounded-full"
                 icon={<ArrowUp className=" size-5" />}
                 tooltip="Send message"
-                onClick={handleSubmit}
+                disabled={status !== "ready"}
               />
             </div>
           </div>
