@@ -1,1 +1,1 @@
-export type ChatStatus = 'submitted' | 'streaming' | 'ready' | 'error';
+export type ChatStatus = "submitted" | "streaming" | "ready" | "error";

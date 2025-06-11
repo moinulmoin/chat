@@ -1,3 +1,4 @@
+import { redis, redisSubscriber } from "@/lib/redis";
 import { getSession } from "@/server/auth";
 import { saveLastMessage } from "@/server/mutations/messages";
 import { createStreamId } from "@/server/mutations/streams";
@@ -15,7 +16,7 @@ import {
 } from "ai";
 import { differenceInSeconds } from "date-fns";
 import { after } from "next/server";
-import { createResumableStreamContext, type ResumableStreamContext } from "resumable-stream";
+import { createResumableStreamContext, type ResumableStreamContext } from "resumable-stream/ioredis";
 
 export const maxDuration = 60;
 
@@ -25,7 +26,9 @@ function getStreamContext() {
   if (!globalStreamContext) {
     try {
       globalStreamContext = createResumableStreamContext({
-        waitUntil: after
+        waitUntil: after,
+        publisher: redis,
+        subscriber: redisSubscriber
       });
     } catch (error: any) {
       if (error.message.includes("REDIS_URL")) {
@@ -134,6 +137,10 @@ export async function POST(request: Request) {
       return new Response("lastMessage is required", { status: 400 });
     }
 
+    if (lastMessage.role !== "user") {
+      return new Response("Last message must be a user message", { status: 400 });
+    }
+
     const session = await getSession();
     if (!session?.user) {
       return new Response("Unauthorized", { status: 401 });
@@ -147,10 +154,6 @@ export async function POST(request: Request) {
 
     if (chat.userId !== session.user?.id) {
       return new Response("Forbidden", { status: 403 });
-    }
-
-    if (lastMessage.role !== "user") {
-      return new Response("Last message must be a user message", { status: 400 });
     }
 
     const previousMessages = await loadChat(chatId);

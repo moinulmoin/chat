@@ -19,7 +19,7 @@ const IconButton = ({
   ...props
 }: IconButtonProps) => {
   const button = (
-    <Button className={cn("", className)} {...props}>
+    <Button className={cn("hover:bg-background", className)} {...props}>
       {icon}
     </Button>
   );

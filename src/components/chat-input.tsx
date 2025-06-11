@@ -33,7 +33,8 @@ export function ChatInput({
 }: ChatInputProps) {
   const { settings } = chatData;
 
-  const isDisabled = status === "submitted" || status === "streaming";
+  const isDisabled = input.length === 0;
+  const isLoading = status !== "ready";
 
   return (
     <div className="p-4">
@@ -43,7 +44,7 @@ export function ChatInput({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!isDisabled) {
+              if (!isDisabled || isLoading) {
                 onSubmit(e);
               }
             }}
@@ -58,20 +59,21 @@ export function ChatInput({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  if (!isDisabled) {
+                  if (!isDisabled || isLoading) {
                     onSubmit(e);
                   }
                 }
               }}
+              autoFocus
             />
           </form>
           {/* Bottom Part: Buttons */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-x-2">
               <IconButton
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="h-8 w-8 flex-shrink-0 rounded-full border"
+                className="h-8 w-8 flex-shrink-0 rounded-full hover:bg-secondary"
                 icon={<Paperclip className="size-4" />}
                 tooltip="Attach file"
               />
@@ -108,10 +110,12 @@ export function ChatInput({
 
               <IconButton
                 size="icon"
-                className="h-9 w-9 rounded-full"
-                icon={isDisabled ? <Square className=" size-4" /> : <ArrowUp className=" size-5" />}
+                className="h-8 w-8 rounded-full hover:bg-secondary"
+                icon={isLoading ? <Square className=" size-4" /> : <ArrowUp className=" size-5" />}
                 tooltip="Send message"
-                onClick={isDisabled ? stop : onSubmit}
+                onClick={isLoading ? stop : onSubmit}
+                variant={isLoading ? "default" : "outline"}
+                // disabled={isDisabled}
               />
             </div>
           </div>

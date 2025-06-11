@@ -23,6 +23,7 @@ function ChatClient({
     stop,
     input,
     setInput,
+    reload,
   } = useChat({
     initialMessages,
     id: chatId,
@@ -46,7 +47,12 @@ function ChatClient({
   return (
     <>
       {/* Chat Messages */}
-      <ChatMessageContainer messages={messages} status={status} />
+      <ChatMessageContainer
+        messages={messages}
+        status={status}
+        setMessages={setMessages}
+        reload={reload}
+      />
 
       {/* Input Footer */}
       <ChatInput
