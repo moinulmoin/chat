@@ -38,5 +38,8 @@ Ideas to go above and beyond.
 *   **Framework**: Next.js
 *   **UI Components**: shadcn/ui
 *   **Styling**: Tailwind CSS
-*   **Backend & Database**: Convex
-*   **AI Integration**: Vercel AI SDK
+*   **Backend**: Next.js API routes
+*   **Database**: PostgreSQL (via Prisma ORM)
+*   **Realtime / Streams**: Redis + `resumable-stream`
+*   **Authentication**: better-auth (GitHub OAuth)
+*   **AI SDK / LLM Integration**: Vercel AI SDK (`ai` + `@ai-sdk/*`)

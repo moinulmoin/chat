@@ -1,8 +1,11 @@
 "use client";
 
 import { useAutoResume } from "@/hooks/use-auto-resume";
+import { defaultModelKey } from "@/lib/chat-settings";
+import { ModelKey } from "@/lib/model-registry";
 import { useChat } from "@ai-sdk/react";
 import { UIMessage } from "ai";
+import { useState } from "react";
 import { ChatInput } from "./chat-input";
 import ChatMessageContainer from "./chat-message-container";
 
@@ -13,6 +16,8 @@ function ChatClient({
   initialMessages: UIMessage[];
   chatId: string;
 }) {
+  const [selectedModelKey, setSelectedModelKey] = useState<ModelKey>(defaultModelKey);
+
   const {
     messages,
     handleSubmit,
@@ -31,7 +36,8 @@ function ChatClient({
       const lastMessage = body.messages.at(-1);
       return {
         lastMessage,
-        id: body.id
+        id: body.id,
+        modelKey: selectedModelKey
       };
     }
   });
@@ -61,6 +67,8 @@ function ChatClient({
         stop={stop}
         input={input}
         setInput={setInput}
+        modelKey={selectedModelKey}
+        onModelChange={setSelectedModelKey}
       />
     </>
   );

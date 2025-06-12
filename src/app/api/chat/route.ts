@@ -1,3 +1,5 @@
+import { getModelConfig, LanguageModelId, ModelKey, validateModelSupport } from "@/lib/model-registry";
+import { registry } from "@/lib/provider-registry";
 import { redis, redisSubscriber } from "@/lib/redis";
 import { getSession } from "@/server/auth";
 import { saveLastMessage } from "@/server/mutations/messages";
@@ -5,12 +7,10 @@ import { createStreamId } from "@/server/mutations/streams";
 import { getChatById, loadChat } from "@/server/queries/chats";
 import { getLastMessageByChatId } from "@/server/queries/messages";
 import { getLastStreamIdByChatId } from "@/server/queries/streams";
-import { google } from "@ai-sdk/google";
 import {
   appendClientMessage,
   appendResponseMessages,
   createDataStream,
-  smoothStream,
   streamText,
   UIMessage
 } from "ai";
@@ -124,9 +124,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { id: chatId, lastMessage } = (await request.json()) as {
+    const { id: chatId, lastMessage, modelKey } = (await request.json()) as {
       id: string;
       lastMessage: UIMessage;
+      modelKey: ModelKey;
     };
 
     if (!chatId) {
@@ -139,6 +140,11 @@ export async function POST(request: Request) {
 
     if (lastMessage.role !== "user") {
       return new Response("Last message must be a user message", { status: 400 });
+    }
+
+    // Validate model support
+    if (!validateModelSupport(modelKey)) {
+      return new Response(`Model ${modelKey} is not supported`, { status: 400 });
     }
 
     const session = await getSession();
@@ -176,18 +182,13 @@ export async function POST(request: Request) {
     // Build the data stream that will emit tokens
     const stream = createDataStream({
       execute: (dataStream) => {
+        const modelConfig = getModelConfig(modelKey);
+        const modelIdentifier = `${modelConfig.provider}:${modelKey}` as LanguageModelId;
         const result = streamText({
-          model: google("gemini-2.5-flash-preview-05-20"),
-          system: "You are t0Chat, a helpful assistant. Always respond in markdown format.",
+          model: registry.languageModel(modelIdentifier),
           messages,
-          providerOptions: {
-            google: {
-              thinkingConfig: {
-                thinkingBudget: 0
-              }
-            }
-          },
-          experimental_transform: [smoothStream()],
+          system: "You are a helpful assistant powered by t0Chat. Always respond in markdown format.",
+          providerOptions: modelConfig.providerOptions,
           onFinish: async ({ response }) => {
             if (session.user?.id) {
               try {
@@ -216,14 +217,14 @@ export async function POST(request: Request) {
             }
           }
         });
-        result.consumeStream();
 
-        // Return a resumable stream to the client
+        // Start piping the stream
+        result.consumeStream?.();
+
+        // Pipe into outer data stream
         result.mergeIntoDataStream(dataStream);
       },
-      onError: () => {
-        return "Oops, an error occurred!";
-      }
+      onError: () => "Oops, an error occurred!",
     });
 
     const streamContext = getStreamContext();

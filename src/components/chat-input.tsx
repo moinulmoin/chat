@@ -9,7 +9,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { IconButton } from "@/components/ui/icon-button";
 import { Textarea } from "@/components/ui/textarea";
-import { chatData } from "@/lib/utils";
+import { isCapabilitySupported } from "@/lib/chat-settings";
+import { ModelKey } from "@/lib/model-registry";
+import { modelsProvider } from "@/lib/utils";
 import { ChatStatus } from "@/types";
 import { ArrowUp, Brain, ChevronDown, Globe, Paperclip, Square } from "lucide-react";
 import { KeyboardEvent, MouseEvent } from "react";
@@ -21,6 +23,8 @@ interface ChatInputProps {
   stop: () => void;
   input: string;
   setInput: (input: string) => void;
+  modelKey: ModelKey;
+  onModelChange?: (modelKey: ModelKey) => void;
 }
 
 export function ChatInput({
@@ -29,12 +33,24 @@ export function ChatInput({
   onSubmit,
   placeholder = "How can t0Chat help?",
   status,
-  stop
+  stop,
+  modelKey,
+  onModelChange
 }: ChatInputProps) {
-  const { settings } = chatData;
 
   const isDisabled = input.length === 0;
   const isLoading = status !== "ready";
+
+  const handleModelChange = (newModelKey: ModelKey) => {
+    onModelChange?.(newModelKey);
+  };
+
+  const currentModel = modelsProvider.availableModels.find(m => m.key === modelKey);
+  const canSearch = isCapabilitySupported(modelKey, 'searchTool');
+  const canThink = isCapabilitySupported(modelKey, 'thinking');
+  const canUploadFile = isCapabilitySupported(modelKey, 'fileUpload');
+  const canGenerateImage = isCapabilitySupported(modelKey, 'imageGeneration');
+  const canUploadImage = isCapabilitySupported(modelKey, 'imageUpload');
 
   return (
     <div className="p-4">
@@ -75,17 +91,18 @@ export function ChatInput({
                 size="icon"
                 className="h-8 w-8 flex-shrink-0 rounded-full hover:bg-secondary"
                 icon={<Paperclip className="size-4" />}
-                tooltip="Attach file"
+                tooltip={canUploadFile ? "Attach file" : "File upload not supported by this model"}
+                disabled={!canUploadFile}
               />
 
-              {settings.features.search && (
+              {canSearch && (
                 <Button variant="outline" size="sm" className="rounded-2xl">
                   <Globe size={14} className="" />
                   Search
                 </Button>
               )}
 
-              {settings.features.think && (
+              {canThink && (
                 <Button variant="outline" size="sm" className="rounded-2xl">
                   <Brain size={14} className="" />
                   Think
@@ -97,13 +114,24 @@ export function ChatInput({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="rounded-2xl">
-                    {settings.model}
+                    {currentModel?.label || modelsProvider.model}
                     <ChevronDown size={16} className="ml-1" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {settings.availableModels.map((model) => (
-                    <DropdownMenuItem key={model}>{model}</DropdownMenuItem>
+                  {modelsProvider.availableModels.map((model) => (
+                    <DropdownMenuItem
+                      key={model.key}
+                      onClick={() => handleModelChange(model.key)}
+                      className="cursor-pointer"
+                    >
+                      <div className="flex flex-col">
+                        <span>{model.label}</span>
+                        {model.description && (
+                          <span className="text-xs text-muted-foreground">{model.description}</span>
+                        )}
+                      </div>
+                    </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
