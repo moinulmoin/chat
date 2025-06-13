@@ -1,20 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import { IconButton } from "@/components/ui/icon-button";
 import { Textarea } from "@/components/ui/textarea";
 import { isCapabilitySupported } from "@/lib/chat-settings";
 import { ModelKey } from "@/lib/model-registry";
 import { modelsProvider } from "@/lib/utils";
 import { ChatStatus } from "@/types";
-import { ArrowUp, Brain, ChevronDown, Globe, Paperclip, Square } from "lucide-react";
+import { ArrowUp, Brain, Globe, Paperclip, Square } from "lucide-react";
 import { KeyboardEvent, MouseEvent } from "react";
+import { ModelSelector } from "./model-selector";
 
 interface ChatInputProps {
   onSubmit: (e: React.FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement> | MouseEvent<HTMLButtonElement>) => void;
@@ -39,7 +34,7 @@ export function ChatInput({
 }: ChatInputProps) {
 
   const isDisabled = input.length === 0;
-  const isLoading = status !== "ready";
+  const isLoading = status === "submitted";
 
   const handleModelChange = (newModelKey: ModelKey) => {
     onModelChange?.(newModelKey);
@@ -111,31 +106,7 @@ export function ChatInput({
             </div>
 
             <div className="flex items-center space-x-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="rounded-2xl">
-                    {currentModel?.label || modelsProvider.model}
-                    <ChevronDown size={16} className="ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {modelsProvider.availableModels.map((model) => (
-                    <DropdownMenuItem
-                      key={model.key}
-                      onClick={() => handleModelChange(model.key)}
-                      className="cursor-pointer"
-                    >
-                      <div className="flex flex-col">
-                        <span>{model.label}</span>
-                        {model.description && (
-                          <span className="text-xs text-muted-foreground">{model.description}</span>
-                        )}
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
+              <ModelSelector modelKey={modelKey} onModelChange={handleModelChange} />
               <IconButton
                 size="icon"
                 className="h-8 w-8 rounded-full hover:bg-secondary"
@@ -143,7 +114,6 @@ export function ChatInput({
                 tooltip="Send message"
                 onClick={isLoading ? stop : onSubmit}
                 variant={isLoading ? "default" : "outline"}
-                // disabled={isDisabled}
               />
             </div>
           </div>

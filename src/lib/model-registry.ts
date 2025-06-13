@@ -18,8 +18,8 @@ export const MODELS = {
     capabilities: {
       searchTool: false,
       thinking: false,
-      fileUpload: true,
-      imageGeneration: true,
+      fileUpload: false,
+      imageGeneration: false,
       imageUpload: true,
     },
   },
@@ -31,8 +31,8 @@ export const MODELS = {
     capabilities: {
       searchTool: false,
       thinking: false,
-      fileUpload: true,
-      imageGeneration: true,
+      fileUpload: false,
+      imageGeneration: false,
       imageUpload: true,
     },
   },
@@ -42,11 +42,11 @@ export const MODELS = {
     displayName: 'O4 Mini',
     description: 'Faster, more affordable reasoning model',
     capabilities: {
-      searchTool: true,
-      thinking: false,
+      searchTool: false,
+      thinking: true,
       fileUpload: false,
       imageGeneration: false,
-      imageUpload: false,
+      imageUpload: true,
     },
   },
 
@@ -54,12 +54,12 @@ export const MODELS = {
     provider: 'google',
     id: 'gemini-2.5-flash-preview-05-20',
     displayName: 'Gemini 2.5 Flash',
-    description: 'Adaptive thinking, cost efficiency',
+    description: 'Cost efficiency',
     capabilities: {
       searchTool: true,
-      thinking: true,
+      thinking: false,
       fileUpload: true,
-      imageGeneration: true,
+      imageGeneration: false,
       imageUpload: true,
     },
     providerOptions: {
@@ -70,7 +70,19 @@ export const MODELS = {
       }
     },
   },
-
+  "gemini-2.5-flash-thinking": {
+    provider: 'google',
+    id: 'gemini-2.5-flash-preview-05-20',
+    displayName: 'Gemini 2.5 Flash (Thinking)',
+    description: 'Adaptive thinking, cost efficiency',
+    capabilities: {
+      searchTool: true,
+      thinking: true,
+      fileUpload: true,
+      imageGeneration: false,
+      imageUpload: true,
+    },
+  },
   'gemini-2.5-pro': {
     provider: 'google',
     id: 'gemini-2.5-pro-preview-06-05',
@@ -80,7 +92,7 @@ export const MODELS = {
       searchTool: true,
       thinking: true,
       fileUpload: true,
-      imageGeneration: true,
+      imageGeneration: false,
       imageUpload: true,
     },
   },
@@ -92,9 +104,9 @@ export const MODELS = {
     capabilities: {
       searchTool: false,
       thinking: false,
-      fileUpload: false,
+      fileUpload: true,
       imageGeneration: false,
-      imageUpload: false,
+      imageUpload: true,
     },
   },
   'qwen3-32b': {
@@ -109,6 +121,29 @@ export const MODELS = {
       imageGeneration: false,
       imageUpload: false,
     },
+    providerOptions: {
+      groq: {
+        reasoningEffort: "none"
+      }
+    },
+  },
+  'qwen3-32b-thinking': {
+    provider: 'groq',
+    id: 'qwen/qwen3-32b',
+    displayName: 'Qwen 3 32B (Thinking)',
+    description: 'A powerful open model from Alibaba Cloud',
+    capabilities: {
+      searchTool: false,
+      thinking: true,
+      fileUpload: false,
+      imageGeneration: false,
+      imageUpload: false,
+    },
+    providerOptions: {
+      groq: {
+        reasoningEffort: "default"
+      }
+    },
   },
   'grok-3': {
     provider: 'xai',
@@ -116,11 +151,11 @@ export const MODELS = {
     displayName: 'Grok 3',
     description: "xAI's most capable model",
     capabilities: {
-      searchTool: false,
+      searchTool: true,
       thinking: false,
-      fileUpload: false,
+      fileUpload: true,
       imageGeneration: false,
-      imageUpload: false,
+      imageUpload: true,
     },
   },
   'grok-3-mini': {
@@ -130,10 +165,10 @@ export const MODELS = {
     description: 'A faster, more efficient Grok model',
     capabilities: {
       searchTool: false,
-      thinking: false,
-      fileUpload: false,
+      thinking: true,
+      fileUpload: true,
       imageGeneration: false,
-      imageUpload: false,
+      imageUpload: true,
     },
   },
 } as const satisfies Record<string, ModelConfig>;

@@ -23,7 +23,8 @@ const openaiProvider = customProvider({
   languageModels: {
     "gpt-4.1": originalOpenAI("gpt-4.1"),
     "gpt-4.1-mini": originalOpenAI("gpt-4.1-mini"),
-    "o4-mini": originalOpenAI("o4-mini")
+    "o4-mini": originalOpenAI("o4-mini"),
+    "gpt-image-gen": originalOpenAI("gpt-4o-mini-image-gen")
   },
 });
 
@@ -31,6 +32,7 @@ const openaiProvider = customProvider({
 const googleProvider = customProvider({
   languageModels: {
     "gemini-2.5-flash": originalGoogle("gemini-2.5-flash-preview-05-20"),
+    "gemini-2.5-flash-thinking": originalGoogle("gemini-2.5-flash-preview-05-20"),
     "gemini-2.5-pro": originalGoogle("gemini-2.5-pro-preview-06-05")
   },
 });
@@ -39,7 +41,8 @@ const googleProvider = customProvider({
 const groqProvider = customProvider({
   languageModels: {
     "llama4-scout": originalGroq("meta-llama/llama-4-scout-17b-16e-instruct"),
-    "qwen3-32b": originalGroq("qwen/qwen3-32b")
+    "qwen3-32b": originalGroq("qwen/qwen3-32b"),
+    "qwen3-32b-thinking": originalGroq("qwen/qwen3-32b")
   },
 });
 
