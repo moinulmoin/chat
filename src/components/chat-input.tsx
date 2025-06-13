@@ -12,7 +12,12 @@ import { KeyboardEvent, MouseEvent } from "react";
 import { ModelSelector } from "./model-selector";
 
 interface ChatInputProps {
-  onSubmit: (e: React.FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement> | MouseEvent<HTMLButtonElement>) => void;
+  onSubmit: (
+    e:
+      | React.FormEvent<HTMLFormElement>
+      | KeyboardEvent<HTMLTextAreaElement>
+      | MouseEvent<HTMLButtonElement>
+  ) => void;
   placeholder?: string;
   status: ChatStatus;
   stop: () => void;
@@ -32,7 +37,6 @@ export function ChatInput({
   modelKey,
   onModelChange
 }: ChatInputProps) {
-
   const isDisabled = input.length === 0;
   const isLoading = status === "submitted";
 
@@ -40,12 +44,12 @@ export function ChatInput({
     onModelChange?.(newModelKey);
   };
 
-  const currentModel = modelsProvider.availableModels.find(m => m.key === modelKey);
-  const canSearch = isCapabilitySupported(modelKey, 'searchTool');
-  const canThink = isCapabilitySupported(modelKey, 'thinking');
-  const canUploadFile = isCapabilitySupported(modelKey, 'fileUpload');
-  const canGenerateImage = isCapabilitySupported(modelKey, 'imageGeneration');
-  const canUploadImage = isCapabilitySupported(modelKey, 'imageUpload');
+  const currentModel = modelsProvider.availableModels.find((m) => m.key === modelKey);
+  const canSearch = isCapabilitySupported(modelKey, "searchTool");
+  const canThink = isCapabilitySupported(modelKey, "thinking");
+  const canUploadFile = isCapabilitySupported(modelKey, "fileUpload");
+  const canGenerateImage = isCapabilitySupported(modelKey, "imageGeneration");
+  const canUploadImage = isCapabilitySupported(modelKey, "imageUpload");
 
   return (
     <div className="p-4">
@@ -94,13 +98,6 @@ export function ChatInput({
                 <Button variant="outline" size="sm" className="rounded-2xl">
                   <Globe size={14} className="" />
                   Search
-                </Button>
-              )}
-
-              {canThink && (
-                <Button variant="outline" size="sm" className="rounded-2xl">
-                  <Brain size={14} className="" />
-                  Think
                 </Button>
               )}
             </div>

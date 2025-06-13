@@ -82,6 +82,13 @@ export const MODELS = {
       imageGeneration: false,
       imageUpload: true,
     },
+    providerOptions: {
+      google: {
+        thinkingConfig: {
+          thinkingBudget: 4096
+        }
+      }
+    },
   },
   'gemini-2.5-pro': {
     provider: 'google',

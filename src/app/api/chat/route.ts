@@ -1,4 +1,9 @@
-import { getModelConfig, LanguageModelId, ModelKey, validateModelSupport } from "@/lib/model-registry";
+import {
+  getModelConfig,
+  LanguageModelId,
+  ModelKey,
+  validateModelSupport
+} from "@/lib/model-registry";
 import { registry } from "@/lib/provider-registry";
 import { redis, redisSubscriber } from "@/lib/redis";
 import { getSession } from "@/server/auth";
@@ -16,7 +21,10 @@ import {
 } from "ai";
 import { differenceInSeconds } from "date-fns";
 import { after } from "next/server";
-import { createResumableStreamContext, type ResumableStreamContext } from "resumable-stream/ioredis";
+import {
+  createResumableStreamContext,
+  type ResumableStreamContext
+} from "resumable-stream/ioredis";
 
 export const maxDuration = 60;
 
@@ -124,7 +132,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { id: chatId, lastMessage, modelKey } = (await request.json()) as {
+    const {
+      id: chatId,
+      lastMessage,
+      modelKey
+    } = (await request.json()) as {
       id: string;
       lastMessage: UIMessage;
       modelKey: ModelKey;
@@ -184,10 +196,26 @@ export async function POST(request: Request) {
       execute: (dataStream) => {
         const modelConfig = getModelConfig(modelKey);
         const modelIdentifier = `${modelConfig.provider}:${modelKey}` as LanguageModelId;
+        console.log({ modelIdentifier });
+
         const result = streamText({
           model: registry.languageModel(modelIdentifier),
           messages,
-          system: "You are a helpful assistant powered by t0Chat. Always respond in markdown format.",
+          system: `You are a helpful assistant powered by t0Chat.
+ALWAYS reply in GitHub-flavoured Markdown (no HTML tags).
+• Write normal text with proper line breaks and lists.
+• Wrap every code sample in fenced blocks and specify the language immediately after the opening back-ticks, e.g.
+
+\`\`\`typescript
+// code here
+\`\`\`
+
+• Never omit the language identifier.
+• Keep code fences intact—do not insert extra spaces or blank lines after the opening/closing back-ticks.
+• Indent nested lists and code exactly so they render correctly.
+• Use standard Markdown constructs (tables, blockquotes, headings) where appropriate.
+• If you reference files or file paths, use back-ticks.
+Respond ONLY with Markdown.`,
           providerOptions: modelConfig.providerOptions,
           onFinish: async ({ response }) => {
             if (session.user?.id) {
@@ -224,7 +252,7 @@ export async function POST(request: Request) {
         // Pipe into outer data stream
         result.mergeIntoDataStream(dataStream);
       },
-      onError: () => "Oops, an error occurred!",
+      onError: () => "Oops, an error occurred!"
     });
 
     const streamContext = getStreamContext();

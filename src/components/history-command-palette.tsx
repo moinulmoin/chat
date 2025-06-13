@@ -87,7 +87,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
   }, {} as Record<string, ChatWithDate[]>);
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
+    <CommandDialog open={open} onOpenChange={onOpenChange} className="max-w-xl">
       <CommandInput placeholder="Search chat history..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
@@ -97,7 +97,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
               <CommandItem
                 key={chat.id}
                 onSelect={() => !editingChatId && !deletingChatId && handleSelect(chat.id)}
-                className="flex justify-between items-center !py-0 px-2"
+                className="flex justify-between items-center !py-1"
               >
                 {editingChatId === chat.id ? (
                   <input
@@ -106,7 +106,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
                     onChange={(e) => setNewTitle(e.target.value)}
                     onBlur={() => handleTitleChange(chat.id)}
                     onKeyDown={(e) => e.key === "Enter" && handleTitleChange(chat.id)}
-                    className="bg-transparent border-b w-full"
+                    className="bg-transparent border-none w-full"
                     autoFocus
                   />
                 ) : (
@@ -120,7 +120,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
                           e.stopPropagation();
                           handleDelete(chat.id);
                         }}
-                        className="p-1 hover:bg-red-100 rounded text-red-600"
+                        className="p-1 rounded"
                         title="Confirm delete"
                       >
                         <Check size={16} />
@@ -130,7 +130,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
                           e.stopPropagation();
                           setDeletingChatId(null);
                         }}
-                        className="p-1 hover:bg-gray-100 rounded"
+                        className="p-1 rounded"
                         title="Cancel delete"
                       >
                         <X size={16} />
@@ -145,7 +145,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
                             setEditingChatId(chat.id);
                             setNewTitle(chat.title || "");
                           }}
-                          className="p-1 hover:bg-accent rounded"
+                          className="p-1 rounded"
                         >
                           <Edit size={16} />
                         </button>
@@ -156,7 +156,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
                             e.stopPropagation();
                             setDeletingChatId(chat.id);
                           }}
-                          className="p-1 hover:bg-accent rounded"
+                          className="p-1 rounded"
                         >
                           <Trash2 size={16} />
                         </button>

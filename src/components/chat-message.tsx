@@ -50,7 +50,7 @@ export function ChatMessage({
   return (
     <div className="flex justify-start">
       <div className="flex flex-col gap-2 max-w-2xl group">
-        <div className="prose prose-neutral">
+        <div className="prose">
           <MemoizedMarkdown content={content} id={message.id} />
         </div>
 

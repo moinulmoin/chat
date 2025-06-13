@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { ModelKey, MODELS } from "@/lib/model-registry";
 import { modelsProvider } from "@/lib/utils";
-import { Brain, Check, ChevronDown, File, FileUp, Globe, Image, ImagePlus, ImageUp, Rocket, Sparkles, Wind, Zap } from "lucide-react";
+import { Brain, Check, ChevronDown, File, FileText, Globe, Image, ImagePlus, Rocket, Sparkles, Wind, Zap } from "lucide-react";
 import * as React from "react";
 
 interface ModelSelectorProps {
@@ -80,10 +80,10 @@ export function ModelSelector({ modelKey, onModelChange }: ModelSelectorProps) {
                       <Brain className="size-4 text-muted-foreground" />
                     )}
                     {MODELS[model.key].capabilities.fileUpload && (
-                      <FileUp className="size-4 text-muted-foreground" />
+                      <FileText className="size-4 text-muted-foreground" />
                     )}
                     {MODELS[model.key].capabilities.imageUpload && (
-                      <ImageUp className="size-4 text-muted-foreground" />
+                      <Image className="size-4 text-muted-foreground" />
                     )}
                     {MODELS[model.key].capabilities.imageGeneration && (
                         <ImagePlus className="size-4 text-muted-foreground" />
