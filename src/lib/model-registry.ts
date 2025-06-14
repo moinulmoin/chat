@@ -1,4 +1,4 @@
-export type Capability = 'searchTool' | 'thinking' | 'fileUpload' | 'imageGeneration' | 'imageUpload';
+export type Capability = 'tooling' | 'thinking' | 'fileUpload' | 'imageGeneration' | 'imageUpload';
 
 export interface ModelConfig {
   provider: string;
@@ -9,44 +9,46 @@ export interface ModelConfig {
   description?: string;
 }
 
+const DEFAULT_CAPABILITIES: Record<Capability, boolean> = {
+  tooling: false,
+  thinking: false,
+  fileUpload: false,
+  imageGeneration: false,
+  imageUpload: false,
+};
+
 export const MODELS = {
   'gpt-4.1': {
     provider: 'openai',
     id: 'gpt-4.1',
-    displayName: 'GPT-4.1',
+    displayName: 'GPT 4.1',
     description: 'Flagship GPT model for complex tasks',
     capabilities: {
-      searchTool: false,
-      thinking: false,
-      fileUpload: false,
-      imageGeneration: false,
+      ...DEFAULT_CAPABILITIES,
       imageUpload: true,
+      tooling: true,
     },
   },
   'gpt-4.1-mini': {
     provider: 'openai',
     id: 'gpt-4.1-mini',
-    displayName: 'GPT-4.1 Mini',
+    displayName: 'GPT 4.1 Mini',
     description: 'Balanced for intelligence, speed, and cost',
     capabilities: {
-      searchTool: false,
-      thinking: false,
-      fileUpload: false,
-      imageGeneration: false,
+      ...DEFAULT_CAPABILITIES,
       imageUpload: true,
+      tooling: true,
     },
   },
   'o4-mini': {
     provider: 'openai',
     id: 'o4-mini',
-    displayName: 'O4 Mini',
+    displayName: 'o4 Mini',
     description: 'Faster, more affordable reasoning model',
     capabilities: {
-      searchTool: false,
+      ...DEFAULT_CAPABILITIES,
       thinking: true,
-      fileUpload: false,
-      imageGeneration: false,
-      imageUpload: true,
+      tooling: true,
     },
   },
 
@@ -56,10 +58,9 @@ export const MODELS = {
     displayName: 'Gemini 2.5 Flash',
     description: 'Cost efficiency',
     capabilities: {
-      searchTool: true,
-      thinking: false,
+      ...DEFAULT_CAPABILITIES,
+      tooling: true,
       fileUpload: true,
-      imageGeneration: false,
       imageUpload: true,
     },
     providerOptions: {
@@ -76,10 +77,10 @@ export const MODELS = {
     displayName: 'Gemini 2.5 Flash (Thinking)',
     description: 'Adaptive thinking, cost efficiency',
     capabilities: {
-      searchTool: true,
+      ...DEFAULT_CAPABILITIES,
+      tooling: true,
       thinking: true,
       fileUpload: true,
-      imageGeneration: false,
       imageUpload: true,
     },
     providerOptions: {
@@ -96,10 +97,10 @@ export const MODELS = {
     displayName: 'Gemini 2.5 Pro',
     description: 'Enhanced thinking and reasoning, multimodal understanding, advanced coding, and more',
     capabilities: {
-      searchTool: true,
+      ...DEFAULT_CAPABILITIES,
+      tooling: true,
       thinking: true,
       fileUpload: true,
-      imageGeneration: false,
       imageUpload: true,
     },
   },
@@ -109,11 +110,10 @@ export const MODELS = {
     displayName: 'Llama 4 Scout (Groq)',
     description: 'The latest Llama model, served by Groq',
     capabilities: {
-      searchTool: false,
-      thinking: false,
+      ...DEFAULT_CAPABILITIES,
       fileUpload: true,
-      imageGeneration: false,
       imageUpload: true,
+      tooling: true,
     },
   },
   'qwen3-32b': {
@@ -122,11 +122,8 @@ export const MODELS = {
     displayName: 'Qwen 3 32B (Groq)',
     description: 'A powerful open model from Alibaba Cloud',
     capabilities: {
-      searchTool: false,
-      thinking: false,
-      fileUpload: false,
-      imageGeneration: false,
-      imageUpload: false,
+      ...DEFAULT_CAPABILITIES,
+      tooling: true,
     },
     providerOptions: {
       groq: {
@@ -140,11 +137,9 @@ export const MODELS = {
     displayName: 'Qwen 3 32B (Thinking)',
     description: 'A powerful open model from Alibaba Cloud',
     capabilities: {
-      searchTool: false,
+      ...DEFAULT_CAPABILITIES,
       thinking: true,
-      fileUpload: false,
-      imageGeneration: false,
-      imageUpload: false,
+      tooling: true,
     },
     providerOptions: {
       groq: {
@@ -158,10 +153,9 @@ export const MODELS = {
     displayName: 'Grok 3',
     description: "xAI's most capable model",
     capabilities: {
-      searchTool: true,
-      thinking: false,
+      ...DEFAULT_CAPABILITIES,
+      tooling: true,
       fileUpload: true,
-      imageGeneration: false,
       imageUpload: true,
     },
   },
@@ -171,11 +165,11 @@ export const MODELS = {
     displayName: 'Grok 3 Mini',
     description: 'A faster, more efficient Grok model',
     capabilities: {
-      searchTool: false,
+      ...DEFAULT_CAPABILITIES,
       thinking: true,
       fileUpload: true,
-      imageGeneration: false,
       imageUpload: true,
+      tooling: true,
     },
   },
 } as const satisfies Record<string, ModelConfig>;

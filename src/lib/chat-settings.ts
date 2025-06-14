@@ -12,7 +12,7 @@ export type AvailableModel = typeof availableModels[number];
 export const defaultModelKey: ModelKey = 'gemini-2.5-flash';
 
 export const features = {
-  searchTool: true,
+  tooling: true,
   thinking: true,
   fileUpload: true,
   imageGeneration: true,
@@ -22,7 +22,7 @@ export const features = {
 export function getModelCapabilities(modelKey: ModelKey): Record<Capability, boolean> {
   const model = availableModels.find(m => m.key === modelKey);
   return model?.capabilities || {
-    searchTool: false,
+    tooling: false,
     thinking: false,
     fileUpload: false,
     imageGeneration: false,

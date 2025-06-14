@@ -5,10 +5,9 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Textarea } from "@/components/ui/textarea";
 import { isCapabilitySupported } from "@/lib/chat-settings";
 import { ModelKey } from "@/lib/model-registry";
-import { modelsProvider } from "@/lib/utils";
 import { ChatStatus } from "@/types";
-import { ArrowUp, Brain, Globe, Paperclip, Square } from "lucide-react";
-import { KeyboardEvent, MouseEvent } from "react";
+import { ArrowUp, Globe, Paperclip, Square } from "lucide-react";
+import { Dispatch, KeyboardEvent, MouseEvent, SetStateAction } from "react";
 import { ModelSelector } from "./model-selector";
 
 interface ChatInputProps {
@@ -25,6 +24,8 @@ interface ChatInputProps {
   setInput: (input: string) => void;
   modelKey: ModelKey;
   onModelChange?: (modelKey: ModelKey) => void;
+  webSearch: boolean;
+  setWebSearch: Dispatch<SetStateAction<boolean>>;
 }
 
 export function ChatInput({
@@ -35,18 +36,18 @@ export function ChatInput({
   status,
   stop,
   modelKey,
-  onModelChange
+  onModelChange,
+  webSearch,
+  setWebSearch
 }: ChatInputProps) {
-  const isDisabled = input.length === 0;
   const isLoading = status === "submitted";
+  const isDisabled = status === "streaming" || status !== "ready";
 
   const handleModelChange = (newModelKey: ModelKey) => {
     onModelChange?.(newModelKey);
   };
 
-  const currentModel = modelsProvider.availableModels.find((m) => m.key === modelKey);
-  const canSearch = isCapabilitySupported(modelKey, "searchTool");
-  const canThink = isCapabilitySupported(modelKey, "thinking");
+  const canTooling = isCapabilitySupported(modelKey, "tooling");
   const canUploadFile = isCapabilitySupported(modelKey, "fileUpload");
   const canGenerateImage = isCapabilitySupported(modelKey, "imageGeneration");
   const canUploadImage = isCapabilitySupported(modelKey, "imageUpload");
@@ -94,8 +95,13 @@ export function ChatInput({
                 disabled={!canUploadFile}
               />
 
-              {canSearch && (
-                <Button variant="outline" size="sm" className="rounded-2xl">
+              {canTooling && (
+                <Button
+                  variant={webSearch ? "default" : "outline"}
+                  size="sm"
+                  className="rounded-2xl"
+                  onClick={() => setWebSearch((prev) => !prev)}
+                >
                   <Globe size={14} className="" />
                   Search
                 </Button>

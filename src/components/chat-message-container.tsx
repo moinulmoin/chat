@@ -30,7 +30,6 @@ export default function ChatMessageContainer({
           <ChatMessage
             key={message.id}
             message={message}
-            status={status}
             setMessages={setMessages}
             isLastMessage={message.id === messages.at(-1)?.id}
             reload={reload}
@@ -39,9 +38,9 @@ export default function ChatMessageContainer({
         {status === "submitted" && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <div className="flex gap-1">
-              <div className="w-2 h-2 bg-background rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-              <div className="w-2 h-2 bg-background rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-              <div className="w-2 h-2 bg-background rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+              <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+              <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce"></div>
             </div>
             <span className="text-sm sr-only">Processing...</span>
           </div>

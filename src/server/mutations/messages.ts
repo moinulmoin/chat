@@ -53,6 +53,7 @@ export async function saveLastMessage(data: {
   chatId: string;
   role: string;
   parts?: any;
+  metadata?: any;
 }) {
   return await prisma.message.create({
     data: {
@@ -60,6 +61,7 @@ export async function saveLastMessage(data: {
       chatId: data.chatId,
       role: data.role,
       parts: data.parts,
+      metadata: data.metadata,
     },
   });
 }

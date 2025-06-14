@@ -12,6 +12,7 @@ import { createStreamId } from "@/server/mutations/streams";
 import { getChatById, loadChat } from "@/server/queries/chats";
 import { getLastMessageByChatId } from "@/server/queries/messages";
 import { getLastStreamIdByChatId } from "@/server/queries/streams";
+import { buildUsageMetadata } from "@/types";
 import {
   appendClientMessage,
   appendResponseMessages,
@@ -25,6 +26,7 @@ import {
   createResumableStreamContext,
   type ResumableStreamContext
 } from "resumable-stream/ioredis";
+import { tools } from "./tools";
 
 export const maxDuration = 60;
 
@@ -135,11 +137,13 @@ export async function POST(request: Request) {
     const {
       id: chatId,
       lastMessage,
-      modelKey
+      modelKey,
+      webSearch
     } = (await request.json()) as {
       id: string;
       lastMessage: UIMessage;
       modelKey: ModelKey;
+      webSearch: boolean;
     };
 
     if (!chatId) {
@@ -196,29 +200,29 @@ export async function POST(request: Request) {
       execute: (dataStream) => {
         const modelConfig = getModelConfig(modelKey);
         const modelIdentifier = `${modelConfig.provider}:${modelKey}` as LanguageModelId;
-        console.log({ modelIdentifier });
+
+        // Record start time to calculate generation duration
+        const generationStartedAt = Date.now();
+        let durationMs = 0;
 
         const result = streamText({
           model: registry.languageModel(modelIdentifier),
           messages,
-          system: `You are a helpful assistant powered by t0Chat.
-ALWAYS reply in GitHub-flavoured Markdown (no HTML tags).
-• Write normal text with proper line breaks and lists.
-• Wrap every code sample in fenced blocks and specify the language immediately after the opening back-ticks, e.g.
-
-\`\`\`typescript
-// code here
-\`\`\`
-
-• Never omit the language identifier.
-• Keep code fences intact—do not insert extra spaces or blank lines after the opening/closing back-ticks.
-• Indent nested lists and code exactly so they render correctly.
-• Use standard Markdown constructs (tables, blockquotes, headings) where appropriate.
-• If you reference files or file paths, use back-ticks.
-Respond ONLY with Markdown.`,
+          system: `You are a helpful assistant, powered by t0Chat.
+Always reply in GitHub-Flavored Markdown (GFM) – no HTML.
+Use standard Markdown features (tables, blockquotes, headings, etc) where applicable.`,
           providerOptions: modelConfig.providerOptions,
-          onFinish: async ({ response }) => {
+          toolCallStreaming: true,
+          toolChoice: webSearch ? "required" : "auto",
+          tools: webSearch
+            ? {
+                webSearch: tools.webSearch
+              }
+            : undefined,
+          maxSteps: webSearch ? 3 : undefined,
+          onFinish: async ({ response, usage }) => {
             if (session.user?.id) {
+              durationMs = Date.now() - generationStartedAt;
               try {
                 const assistantId = response.messages
                   .filter((message) => message.role === "assistant")
@@ -233,12 +237,29 @@ Respond ONLY with Markdown.`,
                   responseMessages: response.messages
                 });
 
+                const usageMeta = buildUsageMetadata({
+                  modelIdentifier,
+                  totalTokens: usage?.totalTokens,
+                  durationMs: durationMs
+                });
+
                 await saveLastMessage({
                   id: assistantId,
                   chatId,
                   role: assistantMessage.role,
-                  parts: assistantMessage.parts
+                  parts: assistantMessage.parts,
+                  metadata: usageMeta
                 });
+
+                try {
+                  dataStream.writeMessageAnnotation({
+                    model: usageMeta.model,
+                    durationMs: usageMeta.durationMs,
+                    tokens: usageMeta.tokens
+                  });
+                } catch (err) {
+                  console.error("Failed to write message annotation", err);
+                }
               } catch (_) {
                 console.error("Failed to save chat");
               }

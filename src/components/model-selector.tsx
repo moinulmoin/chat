@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { ModelKey, MODELS } from "@/lib/model-registry";
 import { modelsProvider } from "@/lib/utils";
-import { Brain, Check, ChevronDown, File, FileText, Globe, Image, ImagePlus, Rocket, Sparkles, Wind, Zap } from "lucide-react";
+import { Brain, Check, ChevronDown, File, FileText, Globe, Hammer, Image, ImagePlus, Rocket, Sparkles, Wind, Zap } from "lucide-react";
 import * as React from "react";
 
 interface ModelSelectorProps {
@@ -73,8 +73,8 @@ export function ModelSelector({ modelKey, onModelChange }: ModelSelectorProps) {
                     <span>{model.label}</span>
                   </div>
                   <div className="ml-auto flex items-center gap-1.5">
-                    {MODELS[model.key].capabilities.searchTool && (
-                      <Globe className="size-4 text-muted-foreground" />
+                    {MODELS[model.key].capabilities.tooling && (
+                      <Hammer className="size-4 text-muted-foreground" />
                     )}
                     {MODELS[model.key].capabilities.thinking && (
                       <Brain className="size-4 text-muted-foreground" />

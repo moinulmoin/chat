@@ -17,7 +17,7 @@ function ChatClient({
   chatId: string;
 }) {
   const [selectedModelKey, setSelectedModelKey] = useState<ModelKey>(defaultModelKey);
-
+  const [webSearch, setWebSearch] = useState(false);
   const {
     messages,
     handleSubmit,
@@ -37,7 +37,8 @@ function ChatClient({
       return {
         lastMessage,
         id: body.id,
-        modelKey: selectedModelKey
+        modelKey: selectedModelKey,
+        webSearch
       };
     }
   });
@@ -69,6 +70,8 @@ function ChatClient({
         setInput={setInput}
         modelKey={selectedModelKey}
         onModelChange={setSelectedModelKey}
+        webSearch={webSearch}
+        setWebSearch={setWebSearch}
       />
     </>
   );

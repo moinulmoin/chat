@@ -1,9 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { deleteMessage } from "@/server/mutations/messages";
+import { deleteMessage, updateMessage } from "@/server/mutations/messages";
 import { getMessageById } from "@/server/queries/messages";
 import { TextPart } from "ai";
+import { randomBytes } from "crypto";
 
 export async function deleteLastMessageAction(messageId: string) {
   return await deleteMessage(messageId);
@@ -66,7 +67,8 @@ export async function branchChatAction(messageId: string) {
   const newChat = await prisma.chat.create({
     data: {
       userId: chat.userId,
-      title:chatTitle,
+      title: chatTitle,
+      parentChatId: chat.id,
     },
   });
 
@@ -83,4 +85,25 @@ export async function branchChatAction(messageId: string) {
   }
 
   return newChat.id;
+}
+
+export async function shareChatAction(chatId: string) {
+  const chat = await prisma.chat.findUnique({ where: { id: chatId } });
+  if (!chat) throw new Error("Chat not found");
+
+  if (chat.publicId) return chat.publicId;
+
+  const publicId = randomBytes(8).toString("base64url");
+
+  await prisma.chat.update({
+    where: { id: chatId },
+    data: { publicId }
+  });
+
+  return publicId;
+}
+
+export async function updateMessageAction(messageId: string, newContent: string) {
+  const parts: TextPart[] = [{ type: "text", text: newContent }];
+  return await updateMessage(messageId, { parts });
 }

@@ -6,6 +6,7 @@ import {
   createProviderRegistry,
   customProvider
 } from "ai";
+import { z } from "zod";
 
 // Centralised provider registry – every part of the app should import from here
 // instead of creating its own provider instances.
@@ -53,11 +54,18 @@ const xaiProvider = customProvider({
   },
 });
 
+const myProvider = customProvider({
+  languageModels: {
+    "title-gen": originalGoogle("gemma-3n-e4b-it")
+  },
+});
+
 export const registry = createProviderRegistry({
   openai: openaiProvider,
   google: googleProvider,
   groq: groqProvider,
   xai: xaiProvider,
+  t0chat: myProvider
 });
 
 export type ProviderKey = "openai" | "google" | "groq" | "xai";

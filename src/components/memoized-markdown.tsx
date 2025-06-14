@@ -35,25 +35,26 @@ const CodeHighlight = ({ className, children, node, ...props }: any) => {
   };
 
   return (
-    <div className="relative group">
-      {/* Copy button */}
-      <IconButton
-        tooltip="Copy"
-        variant="ghost"
-        size="sm"
-        className="absolute right-2 top-6 hover:bg-transparent z-50"
-        icon={<Clipboard className="size-3.5 text-primary-foreground" />}
-        onClick={handleCopy}
-      />
-      {/* Shiki highlighter */}
+    // <div className="relative group not-prose">
+    //   {/* Copy button */}
+    //   <IconButton
+    //     tooltip="Copy"
+    //     variant="ghost"
+    //     size="sm"
+    //     className="absolute right-2 top-6 hover:bg-transparent z-50"
+    //     icon={<Clipboard className="size-3.5 text-primary-foreground" />}
+    //     onClick={handleCopy}
+    //   />
+    //   {/* Shiki highlighter */}
       <ShikiHighlighter
         language={language}
         theme="github-dark"
         {...props}
+        className="not-prose-pre:"
       >
         {code}
       </ShikiHighlighter>
-    </div>
+    // </div>
   );
 };
 

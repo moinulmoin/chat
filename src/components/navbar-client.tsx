@@ -1,7 +1,10 @@
 "use client";
 
+import { shareChatAction } from "@/actions";
 import { Share2, TextSearch } from "lucide-react";
-import { useState } from "react";
+import { useParams } from "next/navigation";
+import { startTransition, useState } from "react";
+import { toast } from "sonner";
 import { HistoryCommandPalette } from "./history-command-palette";
 import { NewChatButton } from "./new-chat-btn";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -11,10 +14,31 @@ import { IconButton } from "./ui/icon-button";
 
 export function NavbarClient({ user }: { user: { name?: string | null; email?: string | null; image?: string | null } | null }) {
     const [historyOpen, setHistoryOpen] = useState(false);
+    const params = useParams();
+    const chatId = params?.id as string | undefined;
     return (
         <div className="flex items-center gap-2">
             <NewChatButton />
-            <IconButton variant="ghost" size="icon" icon={<Share2 />} tooltip="Share this chat" />
+            <IconButton
+                variant="ghost"
+                size="icon"
+                icon={<Share2 />}
+                tooltip="Share this chat"
+                onClick={() => {
+                    if (!chatId) {
+                        toast.error("Open a chat first");
+                        return;
+                    }
+                    startTransition(async () => {
+                        const slug = await shareChatAction(chatId);
+                        const url = `${window.location.origin}/share/${slug}`;
+                        navigator.clipboard
+                            .writeText(url)
+                            .then(() => toast.success("Share link copied to clipboard"))
+                            .catch(() => toast.error("Failed to copy link"));
+                    });
+                }}
+            />
             <IconButton
                 variant="ghost"
                 size="icon"
