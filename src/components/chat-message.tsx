@@ -15,7 +15,14 @@ import { cn } from "@/lib/utils";
 import { Message } from "ai";
 import { Clipboard, Pencil, RefreshCcw, Split, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { startTransition, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  startTransition,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction
+} from "react";
 import { toast } from "sonner";
 
 interface ChatMessageProps {
@@ -23,11 +30,12 @@ interface ChatMessageProps {
   setMessages: Dispatch<SetStateAction<Message[]>>;
   isLastMessage: boolean;
   reload: () => void;
+  status: "submitted" | "streaming" | "ready" | "error";
 }
 
 function WebSearchLoading() {
   return (
-    <div className="flex items-center gap-2 text-muted-foreground">
+    <div className="flex flex-col gap-2 text-muted-foreground">
       <div className="flex gap-1">
         <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce [animation-delay:-0.3s]" />
         <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce [animation-delay:-0.15s]" />
@@ -42,7 +50,8 @@ export function ChatMessage({
   message,
   setMessages,
   isLastMessage,
-  reload
+  reload,
+  status
 }: ChatMessageProps) {
   const router = useRouter();
 
@@ -87,8 +96,8 @@ export function ChatMessage({
                 onClick={() => {
                   if (!message.id) return;
                   startTransition(async () => {
-                    await updateMessageAction(message.id, editedText!)
-                    await deleteTrailingMessagesAction(message.id)
+                    await updateMessageAction(message.id, editedText!);
+                    await deleteTrailingMessagesAction(message.id);
                   });
 
                   setMessages((prevMessages: Message[]) => {
@@ -96,7 +105,7 @@ export function ChatMessage({
                     if (idx === -1) return prevMessages;
                     const updatedUserMsg: Message = {
                       ...prevMessages[idx],
-                      parts: [{ type: "text", text: editedText } as any],
+                      parts: [{ type: "text", text: editedText } as any]
                     };
                     const trimmed = [...prevMessages.slice(0, idx + 1)];
                     trimmed[idx] = updatedUserMsg;
@@ -121,7 +130,7 @@ export function ChatMessage({
           <div className="px-4 py-2 rounded-2xl max-w-fit bg-background border">
             <p className="text-sm">{userText}</p>
           </div>
-          <div className="flex items-center gap-x-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity absolute top-0 left-full">
+          <div className="flex flex-row-reverse items-center gap-x-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity absolute top-1/2 -translate-y-1/2 right-full">
             <IconButton
               variant="ghost"
               size="sm"
@@ -207,16 +216,18 @@ export function ChatMessage({
   }, [message.parts, message.id]);
 
   return (
-    <div className="flex justify-start">
-      <div className="flex flex-col gap-2 max-w-2xl group">
+    <div className="flex justify-start flex-col group">
+      <div className="flex flex-col gap-2 max-w-2xl">
         <div className="prose">{renderedParts}</div>
+      </div>
 
-        <div
-          className={cn(
-            "flex items-center gap-x-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity",
-            isLastMessage && "opacity-100"
-          )}
-        >
+      <div
+        className={cn(
+          "flex items-center gap-x-1 w-full grow justify-between text-muted-foreground opacity-0 transition-opacity",
+          status === "submitted" || status === "streaming" ? "" : "group-hover:opacity-100"
+        )}
+      >
+        <div>
           <IconButton
             variant="ghost"
             size="sm"
@@ -258,31 +269,31 @@ export function ChatMessage({
               });
             }}
           />
-          {(() => {
-            const metaSource =
-              (Array.isArray(message.annotations) && message.annotations.length > 0
-                ? message.annotations[0]
-                : (message as unknown as dbMessage).metadata) || undefined;
-
-            if (!metaSource) return null;
-
-            const meta = metaSource as {
-              model?: string;
-              tokens?: number | null;
-              durationMs?: number;
-            };
-
-            const modelName = MODELS[meta.model?.split(":")[1] as ModelKey]?.displayName;
-            return (
-              <div className="text-xs text-muted-foreground flex gap-2 ml-auto">
-                {modelName && <span>{modelName}</span>}
-                {meta.tokens != null && meta.durationMs != null && (
-                  <span>{Math.round(meta.tokens / (meta.durationMs / 1000))} tokens/s</span>
-                )}
-              </div>
-            );
-          })()}
         </div>
+        {(() => {
+          const metaSource =
+            (Array.isArray(message.annotations) && message.annotations.length > 0
+              ? message.annotations[0]
+              : (message as unknown as dbMessage).metadata) || undefined;
+
+          if (!metaSource) return null;
+
+          const meta = metaSource as {
+            model?: string;
+            tokens?: number | null;
+            durationMs?: number;
+          };
+
+          const modelName = MODELS[meta.model?.split(":")[1] as ModelKey]?.displayName;
+          return (
+            <div className="text-xs text-muted-foreground flex gap-2 ml-auto">
+              {modelName && <span>{modelName}</span>}
+              {meta.tokens != null && meta.durationMs != null && (
+                <span>{Math.round(meta.tokens / (meta.durationMs / 1000))} tokens/s</span>
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

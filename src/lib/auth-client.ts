@@ -9,3 +9,8 @@ export const signInWithGitHub = async () => {
       provider: "github",
   })
 }
+
+export const signOut = async () => {
+  await authClient.signOut();
+  window.location.href = "/signin";
+}

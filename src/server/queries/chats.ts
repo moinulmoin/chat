@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 
-export async function getChatsByUserId(userId: string) {
+export async function getChatsByUserId(
+  userId: string,
+  page: number = 1,
+  limit: number = 20
+) {
   return await prisma.chat.findMany({
     where: {
       userId: userId,
@@ -8,6 +12,8 @@ export async function getChatsByUserId(userId: string) {
     orderBy: {
       updatedAt: "desc",
     },
+    skip: (page - 1) * limit,
+    take: limit,
   });
 }
 
@@ -35,13 +41,25 @@ export async function getChatWithMessages(chatId: string) {
 }
 
 
-export async function loadChat(chatId: string) {
+export async function loadChat(
+  chatId: string,
+  page: number = 1,
+  limit: number = 30
+) {
   const messages = await prisma.message.findMany({
     where: {
-      chatId: chatId,
+      chatId: chatId
     },
+    orderBy: {
+      createdAt: "desc"
+    },
+    skip: (page - 1) * limit,
+    take: limit
   });
-  return messages;
+
+  // Since we are fetching in descending order to get pages from the end,
+  // we need to reverse them to display in correct chronological order.
+  return messages.reverse();
 }
 
 export async function getChatDetailsById(chatId: string) {

@@ -7,6 +7,7 @@ import {
 import { registry } from "@/lib/provider-registry";
 import { redis, redisSubscriber } from "@/lib/redis";
 import { getSession } from "@/server/auth";
+import { generateChatTitle } from "@/server/mutations/ai";
 import { saveLastMessage } from "@/server/mutations/messages";
 import { createStreamId } from "@/server/mutations/streams";
 import { getChatById, loadChat } from "@/server/queries/chats";
@@ -18,6 +19,7 @@ import {
   appendResponseMessages,
   createDataStream,
   streamText,
+  TextPart,
   UIMessage
 } from "ai";
 import { differenceInSeconds } from "date-fns";
@@ -192,6 +194,8 @@ export async function POST(request: Request) {
       parts: lastMessage.parts
     });
 
+    await generateChatTitle(chatId, lastMessage.parts as TextPart[]);
+
     // Record this new stream so we can resume later
     const streamId = await createStreamId({ chatId });
 
@@ -212,30 +216,48 @@ export async function POST(request: Request) {
 Always reply in GitHub-Flavored Markdown (GFM) – no HTML.
 Use standard Markdown features (tables, blockquotes, headings, etc) where applicable.`,
           providerOptions: modelConfig.providerOptions,
-          toolCallStreaming: true,
+          /*
+           * Setting `required` forces the model to keep calling the tool until
+           * `maxSteps` is reached (see https://github.com/vercel/ai/issues/5195).
+           * Instead, let the model decide with "auto" and cap the iterations.
+           */
           toolChoice: webSearch ? "required" : "auto",
           tools: webSearch
             ? {
                 webSearch: tools.webSearch
               }
             : undefined,
-          maxSteps: webSearch ? 3 : undefined,
+          /*
+           * Prevent infinite tool-call loops; 2 is usually enough (request + answer).
+           */
+          maxSteps: webSearch ? 2 : undefined,
           onFinish: async ({ response, usage }) => {
+            console.log(response.messages);
+
             if (session.user?.id) {
               durationMs = Date.now() - generationStartedAt;
               try {
                 const assistantId = response.messages
-                  .filter((message) => message.role === "assistant")
+                  // @ts-ignore
+                  .filter((message) => message.role !== "user")
                   .at(-1)?.id;
 
+                console.log(assistantId);
+
                 if (!assistantId) {
-                  throw new Error("No assistant message found!");
+                  throw new Error("No assistant or tool message found!");
                 }
 
                 const [, assistantMessage] = appendResponseMessages({
                   messages: [lastMessage],
                   responseMessages: response.messages
                 });
+
+                console.log(assistantMessage.parts);
+
+                if (!assistantMessage.parts) {
+                  throw new Error("No assistant message found!");
+                }
 
                 const usageMeta = buildUsageMetadata({
                   modelIdentifier,

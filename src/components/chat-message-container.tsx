@@ -24,8 +24,8 @@ export default function ChatMessageContainer({
   }, [messages, status]);
 
   return (
-    <main className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-2xl mx-auto space-y-4">
+    // <main className="grow overflow-y-auto">
+      <div className="max-w-2xl mx-auto w-full px-4 space-y-4 grow">
         {messages.map((message, i) => (
           <ChatMessage
             key={message.id}
@@ -33,6 +33,7 @@ export default function ChatMessageContainer({
             setMessages={setMessages}
             isLastMessage={message.id === messages.at(-1)?.id}
             reload={reload}
+            status={status}
           />
         ))}
         {status === "submitted" && (
@@ -47,6 +48,6 @@ export default function ChatMessageContainer({
         )}
         <div ref={messagesEndRef} />
       </div>
-    </main>
+    // </main>
   );
 }

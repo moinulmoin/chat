@@ -54,7 +54,7 @@ export const MODELS = {
 
   'gemini-2.5-flash': {
     provider: 'google',
-    id: 'gemini-2.5-flash-preview-05-20',
+    id: 'gemini-2.5-flash',
     displayName: 'Gemini 2.5 Flash',
     description: 'Cost efficiency',
     capabilities: {
@@ -73,7 +73,7 @@ export const MODELS = {
   },
   "gemini-2.5-flash-thinking": {
     provider: 'google',
-    id: 'gemini-2.5-flash-preview-05-20',
+    id: 'gemini-2.5-flash',
     displayName: 'Gemini 2.5 Flash (Thinking)',
     description: 'Adaptive thinking, cost efficiency',
     capabilities: {
@@ -93,7 +93,7 @@ export const MODELS = {
   },
   'gemini-2.5-pro': {
     provider: 'google',
-    id: 'gemini-2.5-pro-preview-06-05',
+    id: 'gemini-2.5-pro',
     displayName: 'Gemini 2.5 Pro',
     description: 'Enhanced thinking and reasoning, multimodal understanding, advanced coding, and more',
     capabilities: {

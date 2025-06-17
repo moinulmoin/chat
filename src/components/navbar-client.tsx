@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { IconButton } from "./ui/icon-button";
+import { signOut } from "@/lib/auth-client";
 
 export function NavbarClient({ user }: { user: { name?: string | null; email?: string | null; image?: string | null } | null }) {
     const [historyOpen, setHistoryOpen] = useState(false);
@@ -73,7 +74,7 @@ export function NavbarClient({ user }: { user: { name?: string | null; email?: s
                         Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={signOut} >
                         Log out
                     </DropdownMenuItem>
                 </DropdownMenuContent>

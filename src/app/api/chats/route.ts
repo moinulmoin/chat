@@ -2,13 +2,16 @@ import { getSession } from "@/server/auth";
 import { getChatsByUserId } from "@/server/queries/chats";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
         const session = await getSession();
         if (!session?.user?.id) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
-        const chats = await getChatsByUserId(session.user.id);
+        const { searchParams } = new URL(req.url);
+        const page = parseInt(searchParams.get("page") || "1");
+        const limit = parseInt(searchParams.get("limit") || "20");
+        const chats = await getChatsByUserId(session.user.id, page, limit);
         return NextResponse.json(chats);
     } catch (error) {
         console.error("[CHATS_GET]", error);

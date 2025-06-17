@@ -11,7 +11,7 @@ export default function SignInPage() {
   return (
     <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center gap-4">
-        <h1 className="text-2xl font-bold">Welcome back</h1>
+        <h1 className="text-2xl font-bold">Welcome to t0Chat</h1>
         <p className="text-muted-foreground">Sign in to your account to continue</p>
         <Button onClick={async () => {
           setIsLoading(true);

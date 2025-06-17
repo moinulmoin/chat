@@ -7,8 +7,10 @@ import { isCapabilitySupported } from "@/lib/chat-settings";
 import { ModelKey } from "@/lib/model-registry";
 import { ChatStatus } from "@/types";
 import { ArrowUp, Globe, Paperclip, Square } from "lucide-react";
-import { Dispatch, KeyboardEvent, MouseEvent, SetStateAction } from "react";
+import { KeyboardEvent, MouseEvent } from "react";
 import { ModelSelector } from "./model-selector";
+import { useStore } from "@nanostores/react";
+import { chatStore, toggleWebSearch } from "@/lib/stores/chat";
 
 interface ChatInputProps {
   onSubmit: (
@@ -24,8 +26,6 @@ interface ChatInputProps {
   setInput: (input: string) => void;
   modelKey: ModelKey;
   onModelChange?: (modelKey: ModelKey) => void;
-  webSearch: boolean;
-  setWebSearch: Dispatch<SetStateAction<boolean>>;
 }
 
 export function ChatInput({
@@ -37,11 +37,10 @@ export function ChatInput({
   stop,
   modelKey,
   onModelChange,
-  webSearch,
-  setWebSearch
 }: ChatInputProps) {
   const isLoading = status === "submitted";
   const isDisabled = status === "streaming" || status !== "ready";
+  const { webSearch } = useStore(chatStore);
 
   const handleModelChange = (newModelKey: ModelKey) => {
     onModelChange?.(newModelKey);
@@ -100,7 +99,7 @@ export function ChatInput({
                   variant={webSearch ? "default" : "outline"}
                   size="sm"
                   className="rounded-2xl"
-                  onClick={() => setWebSearch((prev) => !prev)}
+                  onClick={() => toggleWebSearch(!webSearch)}
                 >
                   <Globe size={14} className="" />
                   Search

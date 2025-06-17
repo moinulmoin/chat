@@ -1,20 +1,31 @@
 "use client";
 
 import { deleteChat, updateChatTitle } from "@/app/actions";
-import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
 import { IconButton } from "@/components/ui/icon-button";
 import { Chat } from "@/generated/prisma";
-import { format, isToday, isYesterday, parseISO } from "date-fns";
+import { useChats } from "@/hooks/use-chats";
+import { isToday, isYesterday, parseISO } from "date-fns";
 import { Check, Edit, Split, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { VList } from "virtua";
 
 type ChatWithDate = Chat & {
-    createdAt: string | Date;
-    updatedAt: string | Date;
-    parentChatId?: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  parentChatId?: string | null;
 };
+
+type ListItem = { type: "header"; label: string } | { type: "chat"; chat: ChatWithDate };
 
 interface HistoryCommandPaletteProps {
   open: boolean;
@@ -22,20 +33,33 @@ interface HistoryCommandPaletteProps {
 }
 
 export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPaletteProps) {
-  const [chats, setChats] = useState<ChatWithDate[]>([]);
+  const { chats, mutate, setSize, hasMore, isLoading } = useChats(open);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (open) {
-      fetch("/api/chats")
-        .then((res) => res.json())
-        .then((data) => setChats(data));
+    if (hasMore && !isLoading) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            setSize((size) => size + 1);
+          }
+        },
+        { root: listRef.current, threshold: 1.0 }
+      );
+
+      const lastItem = listRef.current?.querySelector(".virtua-item:last-child");
+      if (lastItem) {
+        observer.observe(lastItem);
+      }
+
+      return () => observer.disconnect();
     }
-  }, [open]);
+  }, [chats.length, hasMore, isLoading, setSize]);
 
   const handleSelect = (chatId: string) => {
     router.push(`/chat/${chatId}`);
@@ -55,11 +79,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
     startTransition(async () => {
       try {
         await updateChatTitle(chatId, newTitle);
-        setChats(
-          chats.map((chat) =>
-            chat.id === chatId ? { ...chat, title: newTitle } : chat
-          )
-        );
+        mutate();
         setEditingChatId(null);
         toast.success("Title updated");
       } catch (error) {
@@ -76,7 +96,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
     startTransition(async () => {
       try {
         await deleteChat(chatId);
-        setChats(chats.filter((chat) => chat.id !== chatId));
+        mutate();
         setDeletingChatId(null);
         toast.success("Chat deleted");
       } catch (error) {
@@ -85,36 +105,68 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
     });
   };
 
-  const groupedChats = chats.reduce((acc, chat) => {
-    const date = parseISO(chat.createdAt as string);
-    let key = format(date, "MMMM d, yyyy");
-    if (isToday(date)) {
-      key = "Today";
-    } else if (isYesterday(date)) {
-      key = "Yesterday";
-    }
-    if (!acc[key]) {
-      acc[key] = [];
-    }
-    acc[key].push(chat);
-    return acc;
-  }, {} as Record<string, ChatWithDate[]>);
+  const items = useMemo(() => {
+    const grouped: Record<string, ChatWithDate[]> = {};
+    const now = new Date();
+
+    chats.forEach((chat) => {
+      const date = parseISO(chat.createdAt as string);
+      let key: string;
+
+      if (isToday(date)) {
+        key = "Today";
+      } else if (isYesterday(date)) {
+        key = "Yesterday";
+      } else {
+        const daysDiff = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+        const monthsDiff = Math.floor(daysDiff / 30);
+        key = monthsDiff >= 1 ? `${monthsDiff} month${monthsDiff > 1 ? "s" : ""} ago` : `${daysDiff} day${daysDiff > 1 ? "s" : ""} ago`;
+      }
+
+      (grouped[key] ||= []).push(chat);
+    });
+
+    const sortedDates = Object.keys(grouped).sort((a, b) => {
+      const priority: Record<string, number> = { Today: -2, Yesterday: -1 }; // negative for higher priority
+      const aVal = priority[a] ?? new Date(grouped[a][0].createdAt as string).getTime();
+      const bVal = priority[b] ?? new Date(grouped[b][0].createdAt as string).getTime();
+      return bVal - aVal; // newest group first
+    });
+
+    const listItems: ListItem[] = [];
+    sortedDates.forEach((date) => {
+      listItems.push({ type: "header", label: date });
+      grouped[date].forEach((chat) => {
+        listItems.push({ type: "chat", chat });
+      });
+    });
+    return listItems;
+  }, [chats]);
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange} className="max-w-xl">
       <CommandInput placeholder="Search chat history..." />
-      <CommandList>
+      <CommandList style={{ height: "400px", overflowY: "auto" }} ref={listRef}>
         <CommandEmpty>No results found.</CommandEmpty>
-        {Object.entries(groupedChats)
-          .sort(([a], [b]) => {
-             const order: Record<string, number> = { Today: 0, Yesterday: 1 };
-             const aVal = order[a] ?? new Date(a).getTime();
-             const bVal = order[b] ?? new Date(b).getTime();
-             return aVal - bVal;          // lower value (newer) first
-          })
-          .map(([date, chats]) => (
-            <CommandGroup key={date} heading={date} className="">
-              {chats.map((chat) => (
+        {isLoading && !chats.length && <div className="p-4 text-sm text-center">Loading...</div>}
+        <VList style={{ height: 400 }} overscan={4}>
+          {items.map((_, index) => null /* placeholder to satisfy count */)}
+        </VList>
+        <VList style={{ height: 400 }} overscan={4}>
+          {(index: number) => {
+            const item = items[index];
+
+            if (item.type === "header") {
+              return (
+                <div className="px-2 virtua-item">
+                  <CommandGroup heading={item.label} className="!py-1" />
+                </div>
+              );
+            }
+
+            const chat = item.chat;
+            return (
+              <div className="virtua-item">
                 <CommandItem
                   key={chat.id}
                   value={chat.id}
@@ -193,7 +245,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
                         />
                       </>
                     ) : (
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                      <>
                         {chat.parentChatId && (
                           <IconButton
                             icon={<Split size={16} />}
@@ -208,35 +260,38 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
                             className="p-1 h-auto w-auto"
                           />
                         )}
-                        <IconButton
-                          icon={<Edit size={16} />}
-                          tooltip="Edit title"
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStartEdit(chat);
-                          }}
-                          className="p-1 h-auto w-auto"
-                        />
-                        <IconButton
-                          icon={<Trash2 size={16} />}
-                          tooltip="Delete chat"
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeletingChatId(chat.id);
-                          }}
-                          className="p-1 h-auto w-auto"
-                        />
-                      </div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                          <IconButton
+                            icon={<Edit size={16} />}
+                            tooltip="Edit title"
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartEdit(chat);
+                            }}
+                            className="p-1 h-auto w-auto"
+                          />
+                          <IconButton
+                            icon={<Trash2 size={16} />}
+                            tooltip="Delete chat"
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingChatId(chat.id);
+                            }}
+                            className="p-1 h-auto w-auto"
+                          />
+                        </div>
+                      </>
                     )}
                   </div>
                 </CommandItem>
-              ))}
-            </CommandGroup>
-          ))}
+              </div>
+            );
+          }}
+        </VList>
       </CommandList>
     </CommandDialog>
   );

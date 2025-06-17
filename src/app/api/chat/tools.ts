@@ -11,14 +11,13 @@ export const webSearch = tool({
   }),
   execute: async ({ query }) => {
     const { results } = await tavilyClient.search(query, {
-      numResults: 3,
+      numResults: 2,
       includeRawContent: "markdown"
     });
     return results.map((result) => ({
       title: result.title,
       url: result.url,
       content: result.content,
-      publishedDate: result.publishedDate
     }));
   }
 });
