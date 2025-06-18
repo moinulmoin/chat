@@ -18,6 +18,7 @@ import {
   appendClientMessage,
   appendResponseMessages,
   createDataStream,
+  smoothStream,
   streamText,
   UIMessage
 } from "ai";
@@ -205,8 +206,6 @@ export async function POST(request: Request) {
         const modelConfig = getModelConfig(modelKey);
         const modelIdentifier = `${modelConfig.provider}:${modelKey}` as LanguageModelId;
 
-        console.log({ modelIdentifier });
-
         // Record start time to calculate generation duration
         const generationStartedAt = Date.now();
         let durationMs = 0;
@@ -238,6 +237,7 @@ if webSearchTool is true, you must use the webSearch tool to search the web for 
            * Prevent infinite tool-call loops; 2 is usually enough (request + answer).
            */
           maxSteps: webSearch ? 2 : undefined,
+          experimental_transform: [smoothStream()],
           onFinish: async ({ response, usage }) => {
             console.log(response.messages);
 
