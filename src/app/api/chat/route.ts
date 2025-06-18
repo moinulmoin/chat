@@ -189,6 +189,7 @@ export async function POST(request: Request) {
     });
 
     await saveLastMessage({
+      id: lastMessage.id,
       chatId,
       role: lastMessage.role,
       parts: lastMessage.parts
@@ -205,6 +206,8 @@ export async function POST(request: Request) {
         const modelConfig = getModelConfig(modelKey);
         const modelIdentifier = `${modelConfig.provider}:${modelKey}` as LanguageModelId;
 
+        console.log({ modelIdentifier });
+
         // Record start time to calculate generation duration
         const generationStartedAt = Date.now();
         let durationMs = 0;
@@ -214,14 +217,19 @@ export async function POST(request: Request) {
           messages,
           system: `You are a helpful assistant, powered by t0Chat.
 Always reply in GitHub-Flavored Markdown (GFM) – no HTML.
-Use standard Markdown features (tables, blockquotes, headings, etc) where applicable.`,
+Use standard Markdown features (tables, blockquotes, headings, etc) where applicable.
+
+WebSearchTool: ${webSearch}
+
+if webSearchTool is true, you must use the webSearch tool to search the web for information.
+`,
           providerOptions: modelConfig.providerOptions,
           /*
            * Setting `required` forces the model to keep calling the tool until
            * `maxSteps` is reached (see https://github.com/vercel/ai/issues/5195).
            * Instead, let the model decide with "auto" and cap the iterations.
            */
-          toolChoice: webSearch ? "required" : "auto",
+          toolChoice: "auto",
           tools: webSearch
             ? {
                 webSearch: tools.webSearch
@@ -242,8 +250,6 @@ Use standard Markdown features (tables, blockquotes, headings, etc) where applic
                   .filter((message) => message.role !== "user")
                   .at(-1)?.id;
 
-                console.log(assistantId);
-
                 if (!assistantId) {
                   throw new Error("No assistant or tool message found!");
                 }
@@ -252,8 +258,6 @@ Use standard Markdown features (tables, blockquotes, headings, etc) where applic
                   messages: [lastMessage],
                   responseMessages: response.messages
                 });
-
-                console.log(assistantMessage.parts);
 
                 if (!assistantMessage.parts) {
                   throw new Error("No assistant message found!");

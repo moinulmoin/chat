@@ -9,7 +9,7 @@ export const availableModels = getAvailableModels().map(({ key, config }) => ({
 
 export type AvailableModel = typeof availableModels[number];
 
-export const defaultModelKey: ModelKey = 'gemini-2.5-flash';
+export const defaultModelKey: ModelKey = 'gemini-2.5-flash-lite';
 
 export const features = {
   tooling: true,

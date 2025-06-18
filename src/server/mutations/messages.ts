@@ -11,40 +11,43 @@ export async function createMessage(data: {
       chatId: data.chatId,
       role: data.role,
       parts: data.parts,
-      metadata: data.metadata,
-    },
+      metadata: data.metadata
+    }
   });
 }
 
-export async function updateMessage(id: string, data: {
-  role?: string;
-  parts?: any;
-  metadata?: any;
-}) {
+export async function updateMessage(
+  id: string,
+  data: {
+    role?: string;
+    parts?: any;
+    metadata?: any;
+  }
+) {
   return await prisma.message.update({
     where: {
-      id: id,
+      id: id
     },
     data: {
       ...data,
-      updatedAt: new Date(),
-    },
+      updatedAt: new Date()
+    }
   });
 }
 
 export async function deleteMessage(id: string) {
   return await prisma.message.delete({
     where: {
-      id: id,
-    },
+      id: id
+    }
   });
 }
 
 export async function deleteMessagesByChatId(chatId: string) {
   return await prisma.message.deleteMany({
     where: {
-      chatId: chatId,
-    },
+      chatId: chatId
+    }
   });
 }
 
@@ -55,13 +58,20 @@ export async function saveLastMessage(data: {
   parts?: any;
   metadata?: any;
 }) {
-  return await prisma.message.create({
-    data: {
+  return await prisma.message.upsert({
+    where: { id: data.id },
+    update: {
+      // We only update mutable fields to keep history consistent
+      role: data.role,
+      parts: data.parts,
+      metadata: data.metadata
+    },
+    create: {
       id: data.id,
       chatId: data.chatId,
       role: data.role,
       parts: data.parts,
-      metadata: data.metadata,
-    },
+      metadata: data.metadata
+    }
   });
 }

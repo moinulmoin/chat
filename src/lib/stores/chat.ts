@@ -12,8 +12,8 @@ export const chatStore = map<ChatStore>({
   webSearch: false
 });
 
-export const toggleWebSearch = (enabled: boolean) => {
-  chatStore.setKey("webSearch", enabled);
+export const toggleWebSearch = () => {
+  chatStore.setKey("webSearch", !chatStore.get().webSearch);
 };
 
 export const setSelectedModel = (modelKey: ModelKey) => {

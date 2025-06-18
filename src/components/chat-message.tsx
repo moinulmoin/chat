@@ -1,36 +1,41 @@
 "use client";
 
-import {
-  branchChatAction,
-  deleteLastMessageAction,
-  deleteTrailingMessagesAction,
-  updateMessageAction
-} from "@/actions";
+import { branchChatAction } from "@/actions";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { IconButton } from "@/components/ui/icon-button";
 import { Message as dbMessage } from "@/generated/prisma";
-import { ModelKey, MODELS } from "@/lib/model-registry";
+import { getAvailableModels, ModelKey, MODELS } from "@/lib/model-registry";
 import { cn } from "@/lib/utils";
 import { Message } from "ai";
-import { Clipboard, Pencil, RefreshCcw, Split, Trash } from "lucide-react";
+import { ChevronDown, Clipboard, Pencil, RefreshCcw, Split, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  startTransition,
-  useEffect,
-  useMemo,
-  useState,
-  type Dispatch,
-  type SetStateAction
-} from "react";
+import { startTransition, useEffect, useMemo, useState, memo } from "react";
 import { toast } from "sonner";
 
 interface ChatMessageProps {
   message: Message;
-  setMessages: Dispatch<SetStateAction<Message[]>>;
-  isLastMessage: boolean;
-  reload: () => void;
   status: "submitted" | "streaming" | "ready" | "error";
+  selectedModelKey: ModelKey;
+  handleRegenerate: ({ messageId, modelKey }: { messageId: string; modelKey?: ModelKey }) => void;
+  handleUserMessageSave: ({
+    messageId,
+    editedText
+  }: {
+    messageId: string;
+    editedText: string;
+  }) => void;
+  handleUserMessageDelete: ({ messageId }: { messageId: string }) => void;
 }
 
 function WebSearchLoading() {
@@ -46,14 +51,25 @@ function WebSearchLoading() {
   );
 }
 
-export function ChatMessage({
+function ChatMessage({
   message,
-  setMessages,
-  isLastMessage,
-  reload,
-  status
+  status,
+  handleRegenerate,
+  handleUserMessageSave,
+  handleUserMessageDelete
 }: ChatMessageProps) {
   const router = useRouter();
+  const availableModels = getAvailableModels();
+
+  const modelsByProvider = useMemo(() => {
+    const grouped: Record<string, Array<{ key: ModelKey; config: any }>> = {};
+    availableModels.forEach(({ key, config }) => {
+      const provider = config.provider;
+      if (!grouped[provider]) grouped[provider] = [];
+      grouped[provider].push({ key, config });
+    });
+    return grouped;
+  }, [availableModels]);
 
   // Extract text content once
   const userText = message?.parts?.map((part) => (part.type === "text" ? part.text : "")).join("");
@@ -68,6 +84,15 @@ export function ChatMessage({
   }, [userText]);
 
   const userCopyableText = userText;
+
+  const handleSave = (editedText: string) => {
+    if (userText === editedText) {
+      setIsEditing(false);
+      return;
+    }
+    handleUserMessageSave({ messageId: message.id!, editedText });
+    setIsEditing(false);
+  };
 
   if (message.role === "user") {
     if (isEditing) {
@@ -91,31 +116,7 @@ export function ChatMessage({
               >
                 Cancel
               </Button>
-              <Button
-                size="sm"
-                onClick={() => {
-                  if (!message.id) return;
-                  startTransition(async () => {
-                    await updateMessageAction(message.id, editedText!);
-                    await deleteTrailingMessagesAction(message.id);
-                  });
-
-                  setMessages((prevMessages: Message[]) => {
-                    const idx = prevMessages.findIndex((m) => m.id === message.id);
-                    if (idx === -1) return prevMessages;
-                    const updatedUserMsg: Message = {
-                      ...prevMessages[idx],
-                      parts: [{ type: "text", text: editedText } as any]
-                    };
-                    const trimmed = [...prevMessages.slice(0, idx + 1)];
-                    trimmed[idx] = updatedUserMsg;
-                    return trimmed;
-                  });
-
-                  setIsEditing(false);
-                  reload();
-                }}
-              >
+              <Button size="sm" onClick={() => handleSave(editedText!)}>
                 Save
               </Button>
             </div>
@@ -158,17 +159,7 @@ export function ChatMessage({
               icon={<Trash className="size-3.5" />}
               tooltip="Delete"
               className="hover:bg-background"
-              onClick={() => {
-                if (!message.id) return;
-                startTransition(async () => {
-                  await deleteTrailingMessagesAction(message.id);
-                });
-                setMessages((prevMessages: Message[]) => {
-                  const idx = prevMessages.findIndex((m) => m.id === message.id);
-                  if (idx === -1) return prevMessages;
-                  return prevMessages.slice(0, idx);
-                });
-              }}
+              onClick={() => handleUserMessageDelete({ messageId: message.id! })}
             />
           </div>
         </div>
@@ -228,22 +219,46 @@ export function ChatMessage({
         )}
       >
         <div>
-          <IconButton
-            variant="ghost"
-            size="sm"
-            icon={<RefreshCcw className="size-3.5" />}
-            tooltip="Regenerate"
-            className="hover:bg-background"
-            onClick={() => {
-              startTransition(async () => {
-                await deleteLastMessageAction(message.id);
-              });
-              setMessages((prevMessages: Message[]) =>
-                prevMessages.filter((m: Message) => m.id !== message.id)
-              );
-              reload();
-            }}
-          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                variant="ghost"
+                size="sm"
+                icon={
+                  <div className="flex items-center gap-1">
+                    <RefreshCcw className="size-3.5" />
+                    <ChevronDown className="size-2.5" />
+                  </div>
+                }
+                tooltip="Regenerate with model"
+                className="hover:bg-background"
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuItem onClick={() => handleRegenerate({ messageId: message.id! })}>
+                <RefreshCcw />
+                Retry
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {Object.entries(modelsByProvider).map(([provider, models]) => (
+                <DropdownMenuSub key={provider}>
+                  <DropdownMenuSubTrigger>
+                    {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    {models.map(({ key, config }) => (
+                      <DropdownMenuItem
+                        key={key}
+                        onClick={() => handleRegenerate({ messageId: message.id!, modelKey: key })}
+                      >
+                        {config.displayName}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <IconButton
             variant="ghost"
             size="sm"
@@ -298,3 +313,5 @@ export function ChatMessage({
     </div>
   );
 }
+
+export const MemoizedChatMessage = memo(ChatMessage);

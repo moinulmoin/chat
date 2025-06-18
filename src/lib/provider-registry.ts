@@ -34,7 +34,8 @@ const googleProvider = customProvider({
   languageModels: {
     "gemini-2.5-flash": originalGoogle("gemini-2.5-flash-preview-05-20"),
     "gemini-2.5-flash-thinking": originalGoogle("gemini-2.5-flash-preview-05-20"),
-    "gemini-2.5-pro": originalGoogle("gemini-2.5-pro-preview-06-05")
+    "gemini-2.5-pro": originalGoogle("gemini-2.5-pro-preview-06-05"),
+    "gemini-2.5-flash-lite": originalGoogle("gemini-2.5-flash-lite-preview-06-17")
   },
 });
 

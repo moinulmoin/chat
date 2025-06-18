@@ -9,8 +9,8 @@ import { ChatStatus } from "@/types";
 import { ArrowUp, Globe, Paperclip, Square } from "lucide-react";
 import { KeyboardEvent, MouseEvent } from "react";
 import { ModelSelector } from "./model-selector";
+import { chatStore, setSelectedModel, toggleWebSearch } from "@/lib/stores/chat";
 import { useStore } from "@nanostores/react";
-import { chatStore, toggleWebSearch } from "@/lib/stores/chat";
 
 interface ChatInputProps {
   onSubmit: (
@@ -24,8 +24,6 @@ interface ChatInputProps {
   stop: () => void;
   input: string;
   setInput: (input: string) => void;
-  modelKey: ModelKey;
-  onModelChange?: (modelKey: ModelKey) => void;
 }
 
 export function ChatInput({
@@ -34,22 +32,20 @@ export function ChatInput({
   onSubmit,
   placeholder = "How can t0Chat help?",
   status,
-  stop,
-  modelKey,
-  onModelChange,
+  stop
 }: ChatInputProps) {
-  const isLoading = status === "submitted";
-  const isDisabled = status === "streaming" || status !== "ready";
-  const { webSearch } = useStore(chatStore);
+  const isSubmitted = status === "submitted";
+  const isStreaming = status === "streaming" || status !== "ready";
+  const { selectedModelKey, webSearch } = useStore(chatStore);
 
   const handleModelChange = (newModelKey: ModelKey) => {
-    onModelChange?.(newModelKey);
+    setSelectedModel(newModelKey);
   };
 
-  const canTooling = isCapabilitySupported(modelKey, "tooling");
-  const canUploadFile = isCapabilitySupported(modelKey, "fileUpload");
-  const canGenerateImage = isCapabilitySupported(modelKey, "imageGeneration");
-  const canUploadImage = isCapabilitySupported(modelKey, "imageUpload");
+  const canTooling = isCapabilitySupported(selectedModelKey, "tooling");
+  const canUploadFile = isCapabilitySupported(selectedModelKey, "fileUpload");
+  const canGenerateImage = isCapabilitySupported(selectedModelKey, "imageGeneration");
+  const canUploadImage = isCapabilitySupported(selectedModelKey, "imageUpload");
 
   return (
     <div className="p-4">
@@ -59,7 +55,7 @@ export function ChatInput({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!isDisabled || isLoading) {
+              if (!isStreaming || isSubmitted) {
                 onSubmit(e);
               }
             }}
@@ -74,7 +70,7 @@ export function ChatInput({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  if (!isDisabled || isLoading) {
+                  if (!isStreaming || isSubmitted) {
                     onSubmit(e);
                   }
                 }
@@ -99,7 +95,7 @@ export function ChatInput({
                   variant={webSearch ? "default" : "outline"}
                   size="sm"
                   className="rounded-2xl"
-                  onClick={() => toggleWebSearch(!webSearch)}
+                  onClick={() => toggleWebSearch()}
                 >
                   <Globe size={14} className="" />
                   Search
@@ -108,14 +104,16 @@ export function ChatInput({
             </div>
 
             <div className="flex items-center space-x-2">
-              <ModelSelector modelKey={modelKey} onModelChange={handleModelChange} />
+              <ModelSelector modelKey={selectedModelKey} onModelChange={handleModelChange} />
               <IconButton
                 size="icon"
-                className="h-8 w-8 rounded-full hover:bg-secondary"
-                icon={isLoading ? <Square className=" size-4" /> : <ArrowUp className=" size-5" />}
+                className="h-8 w-8 rounded-full"
+                icon={
+                  isSubmitted ? <Square className=" size-4" /> : <ArrowUp className=" size-5" />
+                }
                 tooltip="Send message"
-                onClick={isLoading ? stop : onSubmit}
-                variant={isLoading ? "default" : "outline"}
+                onClick={isSubmitted ? stop : onSubmit}
+                variant={isStreaming || isSubmitted ? "default" : "outline"}
               />
             </div>
           </div>

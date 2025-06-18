@@ -1,19 +1,13 @@
-import { Message } from "ai";
-import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
-import { ChatMessage } from "./chat-message";
+import { useEffect, useRef } from "react";
 
 interface ChatMessageContainerProps {
-  messages: Message[];
   status: "submitted" | "streaming" | "ready" | "error";
-  setMessages: Dispatch<SetStateAction<Message[]>>;
-  reload: () => void;
+  children: React.ReactNode;
 }
 
 export default function ChatMessageContainer({
-  messages,
   status,
-  setMessages,
-  reload,
+  children
 }: ChatMessageContainerProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -21,21 +15,12 @@ export default function ChatMessageContainer({
     messagesEndRef.current?.scrollIntoView({
       behavior: status === "streaming" ? "auto" : "smooth"
     });
-  }, [messages, status]);
+  }, [status]);
 
   return (
     // <main className="grow overflow-y-auto">
       <div className="max-w-2xl mx-auto w-full px-4 space-y-4 grow">
-        {messages.map((message, i) => (
-          <ChatMessage
-            key={message.id}
-            message={message}
-            setMessages={setMessages}
-            isLastMessage={message.id === messages.at(-1)?.id}
-            reload={reload}
-            status={status}
-          />
-        ))}
+ {children}
         {status === "submitted" && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <div className="flex gap-1">
@@ -48,6 +33,5 @@ export default function ChatMessageContainer({
         )}
         <div ref={messagesEndRef} />
       </div>
-    // </main>
   );
 }

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/popover";
 import { ModelKey, MODELS } from "@/lib/model-registry";
 import { modelsProvider } from "@/lib/utils";
-import { Brain, Check, ChevronDown, File, FileText, Globe, Hammer, Image, ImagePlus, Rocket, Sparkles, Wind, Zap } from "lucide-react";
+import { Brain, Check, ChevronDown, FileText, Hammer, Image, ImagePlus, Rocket, Sparkles, Wind, Zap } from "lucide-react";
 import * as React from "react";
 
 interface ModelSelectorProps {
