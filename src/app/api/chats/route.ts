@@ -11,7 +11,8 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "20");
-        const chats = await getChatsByUserId(session.user.id, page, limit);
+        const title = searchParams.get("title") || undefined;
+        const chats = await getChatsByUserId(session.user.id, page, limit, title);
         return NextResponse.json(chats);
     } catch (error) {
         console.error("[CHATS_GET]", error);

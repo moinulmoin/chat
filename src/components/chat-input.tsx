@@ -5,12 +5,11 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Textarea } from "@/components/ui/textarea";
 import { isCapabilitySupported } from "@/lib/chat-settings";
 import { ModelKey } from "@/lib/model-registry";
+  import { setSelectedModel, setWebSearch } from "@/lib/stores/chat";
 import { ChatStatus } from "@/types";
 import { ArrowUp, Globe, Paperclip, Square } from "lucide-react";
 import { KeyboardEvent, MouseEvent } from "react";
 import { ModelSelector } from "./model-selector";
-import { chatStore, setSelectedModel, toggleWebSearch } from "@/lib/stores/chat";
-import { useStore } from "@nanostores/react";
 
 interface ChatInputProps {
   onSubmit: (
@@ -24,6 +23,8 @@ interface ChatInputProps {
   stop: () => void;
   input: string;
   setInput: (input: string) => void;
+  modelKey: ModelKey;
+  webSearch: boolean;
 }
 
 export function ChatInput({
@@ -32,20 +33,23 @@ export function ChatInput({
   onSubmit,
   placeholder = "How can t0Chat help?",
   status,
-  stop
+  stop,
+  webSearch,
+  modelKey
 }: ChatInputProps) {
+  console.log("webSearch", webSearch);
+
   const isSubmitted = status === "submitted";
   const isStreaming = status === "streaming" || status !== "ready";
-  const { selectedModelKey, webSearch } = useStore(chatStore);
 
   const handleModelChange = (newModelKey: ModelKey) => {
     setSelectedModel(newModelKey);
   };
 
-  const canTooling = isCapabilitySupported(selectedModelKey, "tooling");
-  const canUploadFile = isCapabilitySupported(selectedModelKey, "fileUpload");
-  const canGenerateImage = isCapabilitySupported(selectedModelKey, "imageGeneration");
-  const canUploadImage = isCapabilitySupported(selectedModelKey, "imageUpload");
+  const canTooling = isCapabilitySupported(modelKey, "tooling");
+  const canUploadFile = isCapabilitySupported(modelKey, "fileUpload");
+  const canGenerateImage = isCapabilitySupported(modelKey, "imageGeneration");
+  const canUploadImage = isCapabilitySupported(modelKey, "imageUpload");
 
   return (
     <div className="p-4">
@@ -95,7 +99,7 @@ export function ChatInput({
                   variant={webSearch ? "default" : "outline"}
                   size="sm"
                   className="rounded-2xl"
-                  onClick={() => toggleWebSearch()}
+                  onClick={() => setWebSearch(!webSearch)}
                 >
                   <Globe size={14} className="" />
                   Search
@@ -104,7 +108,7 @@ export function ChatInput({
             </div>
 
             <div className="flex items-center space-x-2">
-              <ModelSelector modelKey={selectedModelKey} onModelChange={handleModelChange} />
+              <ModelSelector modelKey={modelKey} onModelChange={handleModelChange} />
               <IconButton
                 size="icon"
                 className="h-8 w-8 rounded-full"

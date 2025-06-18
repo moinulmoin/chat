@@ -35,7 +35,7 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         lastMessage,
         id: body.id,
         modelKey: selectedModelKey,
-        webSearch: false
+        webSearch
       };
     }
   });
@@ -65,11 +65,10 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
       reload({
         body: {
           modelKey: modelKey,
-          webSearch: webSearch
         }
       });
     },
-    [webSearch]
+    []
   );
 
   const handleUserMessageSave = useCallback(
@@ -92,14 +91,9 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         return trimmed;
       });
 
-      reload({
-        body: {
-          modelKey: selectedModelKey,
-          webSearch: webSearch
-        }
-      });
+      reload();
     },
-    [webSearch]
+    []
   );
 
   const handleUserMessageDelete = useCallback(
@@ -114,7 +108,7 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         return prevMessages.slice(0, idx);
       });
     },
-    [setMessages]
+    []
   );
 
   return (
@@ -136,11 +130,13 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
 
       {/* Input Footer */}
       <ChatInput
+        modelKey={selectedModelKey}
         onSubmit={handleSubmit}
         status={status}
         stop={stop}
         input={input}
         setInput={setInput}
+        webSearch={webSearch}
       />
     </>
   );

@@ -19,7 +19,6 @@ import {
   appendResponseMessages,
   createDataStream,
   streamText,
-  TextPart,
   UIMessage
 } from "ai";
 import { differenceInSeconds } from "date-fns";
@@ -195,7 +194,7 @@ export async function POST(request: Request) {
       parts: lastMessage.parts
     });
 
-    await generateChatTitle(chatId, lastMessage.parts as TextPart[]);
+    await generateChatTitle(chatId, lastMessage.parts);
 
     // Record this new stream so we can resume later
     const streamId = await createStreamId({ chatId });

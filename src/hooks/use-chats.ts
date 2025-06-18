@@ -10,10 +10,13 @@ type ChatWithDate = Chat & {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export function useChats(enabled: boolean) {
+export function useChats(enabled: boolean, query: string) {
   const { data, mutate, error, isLoading, setSize, size } = useSWRInfinite<
     ChatWithDate[]
-  >(enabled ? swrKeys.chats : () => null, fetcher);
+  >(
+    enabled ? (pageIndex, previousPageData) => swrKeys.chats(pageIndex, previousPageData, query) : () => null,
+    fetcher
+  );
 
   const chats = data ? data.flat() : [];
   const hasMore = data ? data[data.length - 1].length > 0 : true;

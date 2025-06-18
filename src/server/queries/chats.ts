@@ -3,11 +3,18 @@ import { prisma } from "@/lib/prisma";
 export async function getChatsByUserId(
   userId: string,
   page: number = 1,
-  limit: number = 20
+  limit: number = 20,
+  title?: string
 ) {
   return await prisma.chat.findMany({
     where: {
       userId: userId,
+      ...(title && {
+        title: {
+          contains: title,
+          mode: "insensitive",
+        },
+      }),
     },
     orderBy: {
       updatedAt: "desc",

@@ -1,6 +1,8 @@
 "use client";
 
 import { shareChatAction } from "@/actions";
+import { useMessageCount } from "@/hooks/use-message-count";
+import { signOut } from "@/lib/auth-client";
 import { Share2, TextSearch } from "lucide-react";
 import { useParams } from "next/navigation";
 import { startTransition, useState } from "react";
@@ -11,35 +13,39 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { IconButton } from "./ui/icon-button";
-import { signOut } from "@/lib/auth-client";
 
 export function NavbarClient({ user }: { user: { name?: string | null; email?: string | null; image?: string | null } | null }) {
     const [historyOpen, setHistoryOpen] = useState(false);
     const params = useParams();
     const chatId = params?.id as string | undefined;
+    const { count } = useMessageCount(chatId);
+
+    const shouldShowShareButton = count !== undefined && count >= 2;
     return (
         <div className="flex items-center gap-2">
             <NewChatButton />
-            <IconButton
-                variant="ghost"
-                size="icon"
-                icon={<Share2 />}
-                tooltip="Share this chat"
-                onClick={() => {
-                    if (!chatId) {
-                        toast.error("Open a chat first");
-                        return;
-                    }
-                    startTransition(async () => {
-                        const slug = await shareChatAction(chatId);
-                        const url = `${window.location.origin}/share/${slug}`;
-                        navigator.clipboard
-                            .writeText(url)
-                            .then(() => toast.success("Share link copied to clipboard"))
-                            .catch(() => toast.error("Failed to copy link"));
-                    });
-                }}
-            />
+            {shouldShowShareButton &&
+                <IconButton
+                    variant="ghost"
+                    size="icon"
+                    icon={<Share2 />}
+                    tooltip="Share this chat"
+                    onClick={() => {
+                        if (!chatId) {
+                            toast.error("Open a chat first");
+                            return;
+                        }
+                        startTransition(async () => {
+                            const slug = await shareChatAction(chatId);
+                            const url = `${window.location.origin}/share/${slug}`;
+                            navigator.clipboard
+                                .writeText(url)
+                                .then(() => toast.success("Share link copied to clipboard"))
+                                .catch(() => toast.error("Failed to copy link"));
+                        });
+                    }}
+                />
+            }
             <IconButton
                 variant="ghost"
                 size="icon"

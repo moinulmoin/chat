@@ -1,14 +1,11 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { deleteMessage, updateMessage } from "@/server/mutations/messages";
+import { updateMessage } from "@/server/mutations/messages";
 import { getMessageById } from "@/server/queries/messages";
 import { TextPart } from "ai";
 import { randomBytes } from "crypto";
 
-export async function deleteLastMessageAction(messageId: string) {
-  return await deleteMessage(messageId);
-}
 
 export async function deleteTrailingMessagesAction(messageId: string) {
   const message = await getMessageById(messageId);
@@ -104,6 +101,10 @@ export async function shareChatAction(chatId: string) {
 }
 
 export async function updateMessageAction(messageId: string, newContent: string) {
+  const message = await getMessageById(messageId);
+  if (!message) {
+    throw new Error("Message not found");
+  }
   const parts: TextPart[] = [{ type: "text", text: newContent }];
   return await updateMessage(messageId, { parts });
 }

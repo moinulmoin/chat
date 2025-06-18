@@ -20,8 +20,9 @@ import { cn } from "@/lib/utils";
 import { Message } from "ai";
 import { ChevronDown, Clipboard, Pencil, RefreshCcw, Split, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { startTransition, useEffect, useMemo, useState, memo } from "react";
+import { memo, startTransition, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useSWRConfig } from "swr";
 
 interface ChatMessageProps {
   message: Message;
@@ -59,6 +60,7 @@ function ChatMessage({
   handleUserMessageDelete
 }: ChatMessageProps) {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const availableModels = getAvailableModels();
 
   const modelsByProvider = useMemo(() => {
@@ -279,8 +281,15 @@ function ChatMessage({
             tooltip="Branching"
             onClick={() => {
               startTransition(async () => {
-                const newChatId = await branchChatAction(message.id);
-                router.push(`/chat/${newChatId}`);
+                try {
+                  const newChatId = await branchChatAction(message.id);
+                  toast.success("Chat branched successfully.");
+                  router.push(`/chat/${newChatId}`);
+                  // Invalidate all chat list pages
+                  await mutate((key) => typeof key === 'string' && key.startsWith('/api/chats?'));
+                } catch (error) {
+                  toast.error("Failed to branch chat.");
+                }
               });
             }}
           />

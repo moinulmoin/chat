@@ -55,18 +55,11 @@ const xaiProvider = customProvider({
   },
 });
 
-const myProvider = customProvider({
-  languageModels: {
-    "title-gen": originalGoogle("gemma-3n-e4b-it")
-  },
-});
-
 export const registry = createProviderRegistry({
   openai: openaiProvider,
   google: googleProvider,
   groq: groqProvider,
   xai: xaiProvider,
-  t0chat: myProvider
 });
 
 export type ProviderKey = "openai" | "google" | "groq" | "xai";
