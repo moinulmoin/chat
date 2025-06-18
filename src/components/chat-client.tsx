@@ -14,6 +14,34 @@ import { startTransition, useCallback, useState } from "react";
 import { ChatInput } from "./chat-input";
 import { MemoizedChatMessage } from "./chat-message";
 import ChatMessageContainer from "./chat-message-container";
+import { TextSelectionMenu } from "./text-selection-menu";
+
+const STARTER_QUESTIONS = [
+  "Generate creative ideas for a project",
+  "Explain the concept of AI",
+  "Help me write a professional email",
+];
+
+function EmptyState({ onQuestionClick }: { onQuestionClick: (question: string) => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center flex-1 px-4 py-8">
+      <h2 className="text-xl font-medium mb-4">
+        How can I help you today?
+      </h2>
+      <div className="space-y-2">
+        {STARTER_QUESTIONS.map((question, index) => (
+          <button
+            key={index}
+            onClick={() => onQuestionClick(question)}
+            className="block text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+          >
+            {question}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[]; chatId: string }) {
   const { selectedModelKey, webSearch } = useStore(chatStore);
@@ -29,6 +57,7 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
     input,
     setInput,
     reload,
+    append,
   } = useChat({
     initialMessages,
     id: chatId,
@@ -170,21 +199,42 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
     []
   );
 
+  const handleAddToChat = useCallback((selectedText: string) => {
+    setInput(prevInput => {
+      const trimmedInput = prevInput.trim();
+      if (trimmedInput) {
+        return `${trimmedInput}\n\n${selectedText}`;
+      }
+      return selectedText;
+    });
+  }, [setInput]);
+
+  const handleExplain = useCallback((selectedText: string) => {
+    append({
+      role: "user",
+      content: `Explain this: ${selectedText}`
+    });
+  }, []);
+
   return (
-    <>
+    <div className="flex flex-col flex-1 w-full">
       {/* Chat Messages */}
       <ChatMessageContainer status={status}>
-        {messages.map((message, i) => (
-          <MemoizedChatMessage
-            key={message.id}
-            message={message}
-            status={status}
-            handleRegenerate={handleRegenerate}
-            selectedModelKey={selectedModelKey}
-            handleUserMessageDelete={handleUserMessageDelete}
-            handleUserMessageSave={handleUserMessageSave}
-          />
-        ))}
+        {messages.length === 0 ? (
+          <EmptyState onQuestionClick={(question) => setInput(question)} />
+        ) : (
+          messages.map((message, i) => (
+            <MemoizedChatMessage
+              key={message.id}
+              message={message}
+              status={status}
+              handleRegenerate={handleRegenerate}
+              selectedModelKey={selectedModelKey}
+              handleUserMessageDelete={handleUserMessageDelete}
+              handleUserMessageSave={handleUserMessageSave}
+            />
+          ))
+        )}
       </ChatMessageContainer>
 
       {/* Input Footer */}
@@ -200,7 +250,13 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         uploadedAttachment={uploadedAttachment}
         onRemoveAttachment={handleRemoveAttachment}
       />
-    </>
+
+      {/* Text Selection Context Menu */}
+      <TextSelectionMenu
+        onAddToChat={handleAddToChat}
+        onExplain={handleExplain}
+      />
+    </div>
   );
 }
 

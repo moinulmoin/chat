@@ -288,7 +288,7 @@ function ChatMessage({
   }, [message.parts]);
 
   return (
-    <div className="flex justify-start flex-col group">
+    <div className="flex justify-start flex-col group" data-role="assistant">
       <div className="flex flex-col gap-2 max-w-2xl">
         {/* Show reasoning/thinking section for assistant messages */}
         {(() => {
