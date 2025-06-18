@@ -3,7 +3,7 @@
 import { useMessageCount } from "@/hooks/use-message-count";
 import { Loader2, SquarePen } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { IconButton } from "./ui/icon-button";
 
@@ -18,12 +18,15 @@ export function NewChatButton() {
 
   const handleNewChat = async () => {
     setIsLoading(true);
-
-    router.push("/chat");
+    router.push("/chat")
   };
 
+  useEffect(() => {
+    return () => setIsLoading(false);
+  }, []);
+
   // Keyboard shortcut for new chat
-  useHotkeys('ctrl+n, meta+n', handleNewChat, {
+  useHotkeys('ctrl+c, meta+c', handleNewChat, {
     preventDefault: true,
     enabled: shouldShow && !isLoading,
     description: 'Open new chat'
@@ -44,7 +47,7 @@ export function NewChatButton() {
           <SquarePen />
         )
       }
-      tooltip={`New chat (Ctrl+N)`}
+      tooltip={`New chat (Ctrl+C)`}
       onClick={handleNewChat}
       disabled={isLoading}
     />

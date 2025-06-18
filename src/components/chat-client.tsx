@@ -19,15 +19,13 @@ import { TextSelectionMenu } from "./text-selection-menu";
 const STARTER_QUESTIONS = [
   "Generate creative ideas for a project",
   "Explain the concept of AI",
-  "Help me write a professional email",
+  "Help me write a professional email"
 ];
 
 function EmptyState({ onQuestionClick }: { onQuestionClick: (question: string) => void }) {
   return (
     <div className="flex flex-col items-center justify-center flex-1 px-4 py-8">
-      <h2 className="text-xl font-medium mb-4">
-        How can I help you today?
-      </h2>
+      <h2 className="text-xl font-medium mb-4">How can I help you today?</h2>
       <div className="space-y-2">
         {STARTER_QUESTIONS.map((question, index) => (
           <button
@@ -57,7 +55,7 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
     input,
     setInput,
     reload,
-    append,
+    append
   } = useChat({
     initialMessages,
     id: chatId,
@@ -68,10 +66,9 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         lastMessage,
         id: body.id,
         modelKey: selectedModelKey,
-        webSearch,
-
+        webSearch
       };
-    },
+    }
   });
 
   useAutoResume({
@@ -82,22 +79,35 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
     setMessages
   });
 
-  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLTextAreaElement> | React.MouseEvent<HTMLButtonElement>) => {
-    const attachments = uploadedAttachment && uploadedAttachment.status === "completed" ? [{
-      name: uploadedAttachment.name,
-      url: uploadedAttachment.url!,
-      contentType: uploadedAttachment.contentType!
-    }] : [];
+  const handleSubmit = useCallback(
+    (
+      e:
+        | React.FormEvent<HTMLFormElement>
+        | React.KeyboardEvent<HTMLTextAreaElement>
+        | React.MouseEvent<HTMLButtonElement>
+    ) => {
+      const attachments =
+        uploadedAttachment && uploadedAttachment.status === "completed"
+          ? [
+              {
+                name: uploadedAttachment.name,
+                url: uploadedAttachment.url!,
+                contentType: uploadedAttachment.contentType!
+              }
+            ]
+          : [];
 
-    originalHandleSubmit(e, {
-      experimental_attachments: attachments
-    });
+      originalHandleSubmit(e, {
+        experimental_attachments: attachments
+      });
 
-    // Clear attachment after sending
-    if (uploadedAttachment && uploadedAttachment.status === "completed") {
-      setUploadedAttachment(null);
-    }
-  }, [originalHandleSubmit, uploadedAttachment]);
+      // Clear attachment after sending
+      if (uploadedAttachment && uploadedAttachment.status === "completed") {
+        setUploadedAttachment(null);
+      }
+    },
+    [originalHandleSubmit, uploadedAttachment]
+  );
 
   const handleFileUpload = async (file: File) => {
     const newAttachment: UploadedAttachment = {
@@ -113,17 +123,25 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         handleUploadUrl: "/api/upload"
       });
 
-      setUploadedAttachment(prev => prev ? {
-        ...prev,
-        status: "completed",
-        url: newBlob.url,
-        contentType: file.type
-      } : null);
+      setUploadedAttachment((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "completed",
+              url: newBlob.url,
+              contentType: file.type
+            }
+          : null
+      );
     } catch (error) {
-      setUploadedAttachment(prev => prev ? {
-        ...prev,
-        status: "error"
-      } : null);
+      setUploadedAttachment((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "error"
+            }
+          : null
+      );
     }
   };
 
@@ -131,10 +149,10 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
     if (uploadedAttachment?.url && uploadedAttachment.status === "completed") {
       try {
         await fetch(`/api/upload?url=${encodeURIComponent(uploadedAttachment.url)}`, {
-          method: 'DELETE'
+          method: "DELETE"
         });
       } catch (error) {
-        console.error('Failed to delete blob:', error);
+        console.error("Failed to delete blob:", error);
       }
     }
     setUploadedAttachment(null);
@@ -154,9 +172,13 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         prevMessages.filter((m: Message) => m.id !== messageId)
       );
 
-      reload();
+      reload({
+        body: {
+          modelKey: selectedModelKey
+        }
+      });
     },
-    []
+    [selectedModelKey, reload]
   );
 
   const handleUserMessageSave = useCallback(
@@ -184,30 +206,30 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
     []
   );
 
-  const handleUserMessageDelete = useCallback(
-    ({ messageId }: { messageId: string }) => {
-      if (!messageId) return;
-      startTransition(async () => {
-        await deleteTrailingMessagesAction(messageId);
-      });
-      setMessages((prevMessages: Message[]) => {
-        const idx = prevMessages.findIndex((m) => m.id === messageId);
-        if (idx === -1) return prevMessages;
-        return prevMessages.slice(0, idx);
+  const handleUserMessageDelete = useCallback(({ messageId }: { messageId: string }) => {
+    if (!messageId) return;
+    startTransition(async () => {
+      await deleteTrailingMessagesAction(messageId);
+    });
+    setMessages((prevMessages: Message[]) => {
+      const idx = prevMessages.findIndex((m) => m.id === messageId);
+      if (idx === -1) return prevMessages;
+      return prevMessages.slice(0, idx);
+    });
+  }, []);
+
+  const handleAddToChat = useCallback(
+    (selectedText: string) => {
+      setInput((prevInput) => {
+        const trimmedInput = prevInput.trim();
+        if (trimmedInput) {
+          return `${trimmedInput}\n\n${selectedText}`;
+        }
+        return selectedText;
       });
     },
-    []
+    [setInput]
   );
-
-  const handleAddToChat = useCallback((selectedText: string) => {
-    setInput(prevInput => {
-      const trimmedInput = prevInput.trim();
-      if (trimmedInput) {
-        return `${trimmedInput}\n\n${selectedText}`;
-      }
-      return selectedText;
-    });
-  }, [setInput]);
 
   const handleExplain = useCallback((selectedText: string) => {
     append({
@@ -252,10 +274,7 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
       />
 
       {/* Text Selection Context Menu */}
-      <TextSelectionMenu
-        onAddToChat={handleAddToChat}
-        onExplain={handleExplain}
-      />
+      <TextSelectionMenu onAddToChat={handleAddToChat} onExplain={handleExplain} />
     </div>
   );
 }
