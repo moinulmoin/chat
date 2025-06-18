@@ -19,8 +19,8 @@ import { GeminiIcon, Grok, Groq, OpenAI } from "@/lib/brand-icons";
 import { getAvailableModels, ModelKey, MODELS } from "@/lib/model-registry";
 import { cn } from "@/lib/utils";
 import { Attachment, Message } from "ai";
-import Image from "next/image";
 import { ChevronDown, Clipboard, FileIcon, Pencil, RefreshCcw, Split, Trash } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { memo, startTransition, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -114,7 +114,10 @@ function ChatMessage({
     setIsEditing(false);
   };
 
-  const attachments = message.experimental_attachments || (message as unknown as dbMessage & { attachments: Attachment[] }).attachments || [];
+  const attachments =
+    message.experimental_attachments ||
+    (message as unknown as dbMessage & { attachments: Attachment[] }).attachments ||
+    [];
 
   /* Render every part (text + tool invocation) in correct order */
   const renderedParts = useMemo(() => {
@@ -170,22 +173,23 @@ function ChatMessage({
 
     return (
       <div className="flex justify-end">
-        <div className="flex flex-col gap-2 max-w-2xl group relative">
+        <div className="flex flex-col gap-2 max-w-2xl group relative items-end">
           <div className="px-4 py-2 rounded-2xl max-w-fit bg-background border">
             <p className="text-sm">{userText}</p>
           </div>
           {attachments.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="">
               {attachments.map((att, idx) =>
                 att.contentType?.startsWith("image/") ? (
-                  <Image
-                    key={idx}
-                    src={att.url}
-                    alt={att.name || "attached image"}
-                    className=" object-cover rounded-xl"
-                    width={100}
-                    height={100}
-                  />
+                  <div key={idx}>
+                    <Image
+                      src={att.url}
+                      alt={att.name || "attached image"}
+                      className=" object-cover rounded-xl"
+                      width={100}
+                      height={100}
+                    />
+                  </div>
                 ) : (
                   <div
                     key={idx}
@@ -339,7 +343,7 @@ function ChatMessage({
                   toast.success("Chat branched successfully.");
                   router.push(`/chat/${newChatId}`);
                   // Invalidate all chat list pages
-                  await mutate((key) => typeof key === 'string' && key.startsWith('/api/chats?'));
+                  await mutate((key) => typeof key === "string" && key.startsWith("/api/chats?"));
                 } catch (error) {
                   toast.error("Failed to branch chat.");
                 }
@@ -366,7 +370,7 @@ function ChatMessage({
             <div className="text-xs text-muted-foreground flex gap-2 ml-auto">
               {modelName && <span>{modelName}</span>}
               {meta.tokens != null && meta.durationMs != null && (
-                <span>{Math.round(meta.tokens / (meta.durationMs / 1000))} tokens/s</span>
+                <span>{Math.round(meta.tokens / (meta.durationMs / 1000))} t/s</span>
               )}
             </div>
           );

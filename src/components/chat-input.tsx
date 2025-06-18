@@ -8,7 +8,7 @@ import { ModelKey } from "@/lib/model-registry";
 import { setSelectedModel, setWebSearch } from "@/lib/stores/chat";
 import { UploadedAttachment } from "@/lib/types";
 import { ChatStatus } from "@/types";
-import { ArrowUp, File as FileIcon, Globe, Loader2, Paperclip, Square, X } from "lucide-react";
+import { ArrowUp, FileText, Globe, Loader2, Paperclip, Square, X } from "lucide-react";
 import Image from "next/image";
 import { KeyboardEvent, MouseEvent, useMemo, useRef } from "react";
 import { ModelSelector } from "./model-selector";
@@ -139,8 +139,11 @@ export function ChatInput({
                           />
                         ) : (
                           <div className="w-full h-full bg-muted rounded-md flex flex-col items-center justify-center text-xs text-center p-1">
-                            <FileIcon className="w-5 h-5 mb-1" />
-                            <span className="truncate">{uploadedAttachment.name}</span>
+                            <IconButton
+                              icon={<FileText />}
+                              tooltip={uploadedAttachment.name}
+                              className="!rounded-md !rounded-bl-xl hover:bg-primary hover:text-primary-foreground"
+                            />
                           </div>
                         )}
                       </div>
@@ -156,29 +159,53 @@ export function ChatInput({
                       )}
                     </div>
                   ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-2xl"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Paperclip className="size-4" />
-                      Attach file
-                    </Button>
+                    <>
+                      {/* Small screen: IconButton with tooltip */}
+                      <IconButton
+                        variant="outline"
+                        size="sm"
+                        className="sm:hidden rounded-full"
+                        icon={<Paperclip className="size-4" />}
+                        tooltip="Attach file"
+                        onClick={() => fileInputRef.current?.click()}
+                      />
+                      {/* Large screen: Regular button with text */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="hidden sm:flex rounded-2xl"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Paperclip className="size-4" />
+                        Attach file
+                      </Button>
+                    </>
                   )}
                 </>
               )}
 
               {canTooling && (
-                <Button
-                  variant={webSearch ? "default" : "outline"}
-                  size="sm"
-                  className="rounded-2xl"
-                  onClick={() => setWebSearch(!webSearch)}
-                >
-                  <Globe size={14} className="" />
-                  Search
-                </Button>
+                <>
+                  {/* Small screen: IconButton with tooltip */}
+                  <IconButton
+                    variant={webSearch ? "default" : "outline"}
+                    size="sm"
+                    className="sm:hidden rounded-full"
+                    icon={<Globe size={14} />}
+                    tooltip="Search"
+                    onClick={() => setWebSearch(!webSearch)}
+                  />
+                  {/* Large screen: Regular button with text */}
+                  <Button
+                    variant={webSearch ? "default" : "outline"}
+                    size="sm"
+                    className="hidden sm:flex rounded-2xl"
+                    onClick={() => setWebSearch(!webSearch)}
+                  >
+                    <Globe size={14} />
+                    Search
+                  </Button>
+                </>
               )}
             </div>
 

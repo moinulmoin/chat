@@ -73,8 +73,6 @@ export async function saveLastMessage(data: {
       role: data.role,
       parts: data.parts,
       metadata: data.metadata,
-      attachments: {
-      }
     }
   });
 

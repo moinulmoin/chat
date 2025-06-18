@@ -14,6 +14,7 @@ export const webSearch = tool({
       numResults: 2,
       includeRawContent: "markdown"
     });
+
     return results.map((result) => ({
       title: result.title,
       url: result.url,

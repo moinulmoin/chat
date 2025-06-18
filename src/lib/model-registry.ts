@@ -120,26 +120,12 @@ export const MODELS = {
   "llama4-scout": {
     provider: "groq",
     id: "meta-llama/llama-4-scout-17b-16e-instruct",
-    displayName: "Llama 4 Scout (Groq)",
+    displayName: "Llama 4 Scout",
     description: "The latest Llama model, served by Groq",
     capabilities: {
       ...DEFAULT_CAPABILITIES,
       fileUpload: true,
       imageUpload: true,
-    }
-  },
-  "qwen3-32b": {
-    provider: "groq",
-    id: "qwen/qwen3-32b",
-    displayName: "Qwen 3 32B (Groq)",
-    description: "A powerful open model from Alibaba Cloud",
-    capabilities: {
-      ...DEFAULT_CAPABILITIES,
-    },
-    providerOptions: {
-      groq: {
-        reasoningEffort: "none"
-      }
     }
   },
   "qwen3-32b-thinking": {
