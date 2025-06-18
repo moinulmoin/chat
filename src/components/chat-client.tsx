@@ -4,19 +4,23 @@ import { deleteTrailingMessagesAction, updateMessageAction } from "@/actions";
 import { useAutoResume } from "@/hooks/use-auto-resume";
 import { ModelKey } from "@/lib/model-registry";
 import { chatStore, setSelectedModel } from "@/lib/stores/chat";
+import { UploadedAttachment } from "@/lib/types";
 import { useChat } from "@ai-sdk/react";
 import { useStore } from "@nanostores/react";
+import { upload } from "@vercel/blob/client";
 import { Message, UIMessage } from "ai";
-import { startTransition, useCallback } from "react";
+import { nanoid } from "nanoid";
+import { startTransition, useCallback, useState } from "react";
 import { ChatInput } from "./chat-input";
 import { MemoizedChatMessage } from "./chat-message";
 import ChatMessageContainer from "./chat-message-container";
 
 function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[]; chatId: string }) {
   const { selectedModelKey, webSearch } = useStore(chatStore);
+  const [uploadedAttachment, setUploadedAttachment] = useState<UploadedAttachment | null>(null);
   const {
     messages,
-    handleSubmit,
+    handleSubmit: originalHandleSubmit,
     status,
     experimental_resume,
     data,
@@ -24,7 +28,7 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
     stop,
     input,
     setInput,
-    reload
+    reload,
   } = useChat({
     initialMessages,
     id: chatId,
@@ -35,9 +39,10 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         lastMessage,
         id: body.id,
         modelKey: selectedModelKey,
-        webSearch
+        webSearch,
+
       };
-    }
+    },
   });
 
   useAutoResume({
@@ -47,6 +52,55 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
     data,
     setMessages
   });
+
+  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLTextAreaElement> | React.MouseEvent<HTMLButtonElement>) => {
+    const attachments = uploadedAttachment && uploadedAttachment.status === "completed" ? [{
+      name: uploadedAttachment.name,
+      url: uploadedAttachment.url!,
+      contentType: uploadedAttachment.contentType!
+    }] : [];
+
+    originalHandleSubmit(e, {
+      experimental_attachments: attachments
+    });
+
+    // Clear attachment after sending
+    if (uploadedAttachment && uploadedAttachment.status === "completed") {
+      setUploadedAttachment(null);
+    }
+  }, [originalHandleSubmit, uploadedAttachment]);
+
+  const handleFileUpload = async (file: File) => {
+    const newAttachment: UploadedAttachment = {
+      id: nanoid(),
+      name: file.name,
+      status: "uploading"
+    };
+    setUploadedAttachment(newAttachment);
+
+    try {
+      const newBlob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload"
+      });
+
+      setUploadedAttachment(prev => prev ? {
+        ...prev,
+        status: "completed",
+        url: newBlob.url,
+        contentType: file.type
+      } : null);
+    } catch (error) {
+      setUploadedAttachment(prev => prev ? {
+        ...prev,
+        status: "error"
+      } : null);
+    }
+  };
+
+  const handleRemoveAttachment = () => {
+    setUploadedAttachment(null);
+  };
 
   const handleRegenerate = useCallback(
     ({ messageId, modelKey }: { messageId: string; modelKey?: ModelKey }) => {
@@ -137,6 +191,9 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         input={input}
         setInput={setInput}
         webSearch={webSearch}
+        onFileUpload={handleFileUpload}
+        uploadedAttachment={uploadedAttachment}
+        onRemoveAttachment={handleRemoveAttachment}
       />
     </>
   );

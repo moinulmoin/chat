@@ -10,7 +10,7 @@ export interface ModelConfig {
 }
 
 const DEFAULT_CAPABILITIES: Record<Capability, boolean> = {
-  tooling: false,
+  tooling: true,
   thinking: false,
   fileUpload: false,
   imageGeneration: false,
@@ -26,7 +26,6 @@ export const MODELS = {
     capabilities: {
       ...DEFAULT_CAPABILITIES,
       imageUpload: true,
-      tooling: true
     }
   },
   "gpt-4.1-mini": {
@@ -37,7 +36,6 @@ export const MODELS = {
     capabilities: {
       ...DEFAULT_CAPABILITIES,
       imageUpload: true,
-      tooling: true
     }
   },
   "o4-mini": {
@@ -48,7 +46,6 @@ export const MODELS = {
     capabilities: {
       ...DEFAULT_CAPABILITIES,
       thinking: true,
-      tooling: true
     }
   },
   "gemini-2.5-flash-lite": {
@@ -58,7 +55,6 @@ export const MODELS = {
     description: "Cost efficiency",
     capabilities: {
       ...DEFAULT_CAPABILITIES,
-      tooling: true,
       fileUpload: true,
       imageUpload: true
     },
@@ -78,7 +74,6 @@ export const MODELS = {
     description: "Cost efficiency",
     capabilities: {
       ...DEFAULT_CAPABILITIES,
-      tooling: true,
       fileUpload: true,
       imageUpload: true
     },
@@ -97,7 +92,6 @@ export const MODELS = {
     description: "Adaptive thinking, cost efficiency",
     capabilities: {
       ...DEFAULT_CAPABILITIES,
-      tooling: true,
       thinking: true,
       fileUpload: true,
       imageUpload: true
@@ -118,7 +112,6 @@ export const MODELS = {
       "Enhanced thinking and reasoning, multimodal understanding, advanced coding, and more",
     capabilities: {
       ...DEFAULT_CAPABILITIES,
-      tooling: true,
       thinking: true,
       fileUpload: true,
       imageUpload: true
@@ -133,7 +126,6 @@ export const MODELS = {
       ...DEFAULT_CAPABILITIES,
       fileUpload: true,
       imageUpload: true,
-      tooling: true
     }
   },
   "qwen3-32b": {
@@ -143,7 +135,6 @@ export const MODELS = {
     description: "A powerful open model from Alibaba Cloud",
     capabilities: {
       ...DEFAULT_CAPABILITIES,
-      tooling: true
     },
     providerOptions: {
       groq: {
@@ -159,7 +150,6 @@ export const MODELS = {
     capabilities: {
       ...DEFAULT_CAPABILITIES,
       thinking: true,
-      tooling: true
     },
     providerOptions: {
       groq: {
@@ -174,7 +164,6 @@ export const MODELS = {
     description: "xAI's most capable model",
     capabilities: {
       ...DEFAULT_CAPABILITIES,
-      tooling: true,
       fileUpload: true,
       imageUpload: true
     }
@@ -189,7 +178,6 @@ export const MODELS = {
       thinking: true,
       fileUpload: true,
       imageUpload: true,
-      tooling: true
     }
   }
 } as const satisfies Record<string, ModelConfig>;

@@ -1,3 +1,4 @@
+import { Attachment, Message } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 
 export async function getChatsByUserId(
@@ -47,21 +48,39 @@ export async function getChatWithMessages(chatId: string) {
   });
 }
 
-
 export async function loadChat(
   chatId: string,
   page: number = 1,
   limit: number = 30
 ) {
-  const messages = await prisma.message.findMany({
+  const messagesFromDb = await prisma.message.findMany({
     where: {
       chatId: chatId
     },
     orderBy: {
       createdAt: "desc"
     },
+    include: {
+      attachments: true
+    },
     skip: (page - 1) * limit,
     take: limit
+  }) as (Message & { attachments: Attachment[] })[]
+
+  const messages = messagesFromDb.map(message => {
+    const { attachments, ...rest } = message
+
+    const mappedAttachments = message.attachments.map((att) => ({
+      name: att.name,
+      contentType: att.contentType,
+      url: att.url,
+    }));
+
+
+    return {
+      ...rest,
+      attachments: mappedAttachments,
+    };
   });
 
   // Since we are fetching in descending order to get pages from the end,

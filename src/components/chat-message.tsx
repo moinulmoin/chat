@@ -15,10 +15,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { IconButton } from "@/components/ui/icon-button";
 import { Message as dbMessage } from "@/generated/prisma";
+import { GeminiIcon, Grok, Groq, OpenAI } from "@/lib/brand-icons";
 import { getAvailableModels, ModelKey, MODELS } from "@/lib/model-registry";
 import { cn } from "@/lib/utils";
-import { Message } from "ai";
-import { ChevronDown, Clipboard, Pencil, RefreshCcw, Split, Trash } from "lucide-react";
+import { Attachment, Message } from "ai";
+import Image from "next/image";
+import { ChevronDown, Clipboard, FileIcon, Pencil, RefreshCcw, Split, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { memo, startTransition, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -52,6 +54,21 @@ function WebSearchLoading() {
   );
 }
 
+const getProviderIcon = (provider: string) => {
+  switch (provider) {
+    case "google":
+      return <GeminiIcon className="size-4 mr-2" />;
+    case "openai":
+      return <OpenAI className="size-4 mr-2" />;
+    case "groq":
+      return <Groq className="size-4 mr-2" />;
+    case "xai":
+      return <Grok className="size-4 mr-2" />;
+    default:
+      return null;
+  }
+};
+
 function ChatMessage({
   message,
   status,
@@ -59,6 +76,7 @@ function ChatMessage({
   handleUserMessageSave,
   handleUserMessageDelete
 }: ChatMessageProps) {
+  console.log(message);
   const router = useRouter();
   const { mutate } = useSWRConfig();
   const availableModels = getAvailableModels();
@@ -95,6 +113,29 @@ function ChatMessage({
     handleUserMessageSave({ messageId: message.id!, editedText });
     setIsEditing(false);
   };
+
+  const attachments = message.experimental_attachments || (message as unknown as dbMessage & { attachments: Attachment[] }).attachments || [];
+
+  /* Render every part (text + tool invocation) in correct order */
+  const renderedParts = useMemo(() => {
+    return message.parts?.map((part, idx) => {
+      if (part.type === "text") {
+        return <MemoizedMarkdown key={idx} content={part.text} id={`${message.id}-${idx}`} />;
+      }
+      if (part.type === "tool-invocation") {
+        const { toolName, state } = part.toolInvocation;
+        if (toolName === "webSearch") {
+          if (state === "partial-call" || state === "call") {
+            // show loader while the search tool is running
+            return <WebSearchLoading key={idx} />;
+          }
+          // hide 'result' part – let the LLM's next text cover the answer
+          return null;
+        }
+      }
+      return null;
+    });
+  }, [message.parts, message.id]);
 
   if (message.role === "user") {
     if (isEditing) {
@@ -133,19 +174,50 @@ function ChatMessage({
           <div className="px-4 py-2 rounded-2xl max-w-fit bg-background border">
             <p className="text-sm">{userText}</p>
           </div>
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((att, idx) =>
+                att.contentType?.startsWith("image/") ? (
+                  <Image
+                    key={idx}
+                    src={att.url}
+                    alt={att.name || "attached image"}
+                    className=" object-cover rounded-xl"
+                    width={100}
+                    height={100}
+                  />
+                ) : (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 rounded-md border bg-muted p-2 text-sm"
+                  >
+                    <FileIcon className="size-4" />
+                    <a
+                      href={att.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline"
+                    >
+                      {att.name || "attached file"}
+                    </a>
+                  </div>
+                )
+              )}
+            </div>
+          )}
           <div className="flex flex-row-reverse items-center gap-x-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity absolute top-1/2 -translate-y-1/2 right-full">
             <IconButton
               variant="ghost"
               size="sm"
               icon={<Clipboard className="size-3.5" />}
               tooltip="Copy"
-              className="hover:bg-background"
               onClick={() => {
                 if (typeof navigator !== "undefined" && navigator.clipboard) {
                   navigator.clipboard.writeText(userCopyableText ?? "").catch(() => {});
                   toast.success("Copied to clipboard");
                 }
               }}
+              className="hover:bg-background"
             />
             <IconButton
               variant="ghost"
@@ -186,28 +258,6 @@ function ChatMessage({
     );
   }, [message.parts]);
 
-  /* Render every part (text + tool invocation) in correct order */
-  const renderedParts = useMemo(() => {
-    return message.parts?.map((part, idx) => {
-      if (part.type === "text") {
-        return <MemoizedMarkdown key={idx} content={part.text} id={`${message.id}-${idx}`} />;
-      }
-
-      if (part.type === "tool-invocation") {
-        const { toolName, state } = part.toolInvocation;
-        if (toolName === "webSearch") {
-          if (state === "partial-call" || state === "call") {
-            // show loader while the search tool is running
-            return <WebSearchLoading key={idx} />;
-          }
-          // hide 'result' part – let the LLM's next text cover the answer
-          return null;
-        }
-      }
-      return null;
-    });
-  }, [message.parts, message.id]);
-
   return (
     <div className="flex justify-start flex-col group">
       <div className="flex flex-col gap-2 max-w-2xl">
@@ -245,7 +295,10 @@ function ChatMessage({
               {Object.entries(modelsByProvider).map(([provider, models]) => (
                 <DropdownMenuSub key={provider}>
                   <DropdownMenuSubTrigger>
-                    {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                    <div className="flex items-center">
+                      {getProviderIcon(provider)}
+                      {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                    </div>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
                     {models.map(({ key, config }) => (

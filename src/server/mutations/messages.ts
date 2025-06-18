@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { UIMessage } from "ai";
 
 export async function createMessage(data: {
   chatId: string;
@@ -57,21 +58,40 @@ export async function saveLastMessage(data: {
   role: string;
   parts?: any;
   metadata?: any;
+  attachments?: UIMessage["experimental_attachments"]
 }) {
-  return await prisma.message.upsert({
+  const message = await prisma.message.upsert({
     where: { id: data.id },
     update: {
-      // We only update mutable fields to keep history consistent
       role: data.role,
       parts: data.parts,
-      metadata: data.metadata
+      metadata: data.metadata,
     },
     create: {
       id: data.id,
       chatId: data.chatId,
       role: data.role,
       parts: data.parts,
-      metadata: data.metadata
+      metadata: data.metadata,
+      attachments: {
+      }
     }
   });
+
+  if (data.role === "user" && data.parts && data.attachments) {
+
+    if (data.attachments[0]) {
+
+      await prisma.attachment.create({
+        data: {        messageId: message.id,
+          chatId: data.chatId,
+          url: data.attachments[0].url,
+          name: data.attachments[0].name!,
+          contentType: data.attachments[0].contentType!
+        }
+      });
+    }
+  }
+
+  return message;
 }

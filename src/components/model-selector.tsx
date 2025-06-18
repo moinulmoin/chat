@@ -14,9 +14,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { GeminiIcon, Grok, Groq, OpenAI } from "@/lib/brand-icons";
 import { ModelKey, MODELS } from "@/lib/model-registry";
 import { modelsProvider } from "@/lib/utils";
-import { Brain, Check, ChevronDown, FileText, Hammer, Image, ImagePlus, Rocket, Sparkles, Wind, Zap } from "lucide-react";
+import { Brain, Check, ChevronDown, FileText, Hammer, Image, ImagePlus } from "lucide-react";
 import * as React from "react";
 
 interface ModelSelectorProps {
@@ -27,13 +28,13 @@ interface ModelSelectorProps {
 const getProviderIcon = (provider: string) => {
   switch (provider) {
     case "google":
-      return <Sparkles className="size-4" />;
+      return <GeminiIcon className="size-4" />;
     case "openai":
-      return <Zap className="size-4" />;
+      return <OpenAI className="size-4" />;
     case "groq":
-      return <Rocket className="size-4" />;
+      return <Groq className="size-4" />;
     case "xai":
-        return <Wind className="size-4" />;
+        return <Grok className="size-4" />;
     default:
       return null;
   }
@@ -73,9 +74,6 @@ export function ModelSelector({ modelKey, onModelChange }: ModelSelectorProps) {
                     <span>{model.label}</span>
                   </div>
                   <div className="ml-auto flex items-center gap-1.5">
-                    {MODELS[model.key].capabilities.tooling && (
-                      <Hammer className="size-4 text-muted-foreground" />
-                    )}
                     {MODELS[model.key].capabilities.thinking && (
                       <Brain className="size-4 text-muted-foreground" />
                     )}

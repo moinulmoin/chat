@@ -136,17 +136,14 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const {
-      id: chatId,
-      lastMessage,
-      modelKey,
-      webSearch
-    } = (await request.json()) as {
+    const payload = (await request.json()) as {
       id: string;
       lastMessage: UIMessage;
       modelKey: ModelKey;
       webSearch: boolean;
     };
+
+    const { id: chatId, lastMessage, modelKey, webSearch } = payload;
 
     if (!chatId) {
       return new Response("chatId is required", { status: 400 });
@@ -192,7 +189,8 @@ export async function POST(request: Request) {
       id: lastMessage.id,
       chatId,
       role: lastMessage.role,
-      parts: lastMessage.parts
+      parts: lastMessage.parts,
+      attachments: lastMessage.experimental_attachments || []
     });
 
     await generateChatTitle(chatId, lastMessage.parts);
