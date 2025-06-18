@@ -98,7 +98,16 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
     }
   };
 
-  const handleRemoveAttachment = () => {
+  const handleRemoveAttachment = async () => {
+    if (uploadedAttachment?.url && uploadedAttachment.status === "completed") {
+      try {
+        await fetch(`/api/upload?url=${encodeURIComponent(uploadedAttachment.url)}`, {
+          method: 'DELETE'
+        });
+      } catch (error) {
+        console.error('Failed to delete blob:', error);
+      }
+    }
     setUploadedAttachment(null);
   };
 
@@ -116,11 +125,7 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         prevMessages.filter((m: Message) => m.id !== messageId)
       );
 
-      reload({
-        body: {
-          modelKey: modelKey,
-        }
-      });
+      reload();
     },
     []
   );

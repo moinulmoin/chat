@@ -4,6 +4,11 @@ import { branchChatAction } from "@/actions";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { Button } from "@/components/ui/button";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "@/components/ui/collapsible";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -19,7 +24,16 @@ import { GeminiIcon, Grok, Groq, OpenAI } from "@/lib/brand-icons";
 import { getAvailableModels, ModelKey, MODELS } from "@/lib/model-registry";
 import { cn } from "@/lib/utils";
 import { Attachment, Message } from "ai";
-import { ChevronDown, Clipboard, FileIcon, Pencil, RefreshCcw, Split, Trash } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Clipboard,
+  FileText,
+  Pencil,
+  RefreshCcw,
+  Split,
+  Trash
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { memo, startTransition, useEffect, useMemo, useState } from "react";
@@ -52,6 +66,24 @@ function WebSearchLoading() {
       <span className="text-sm">Searching the web…</span>
     </div>
   );
+}
+
+function ThinkingDots() {
+  const [dots, setDots] = useState('.');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => {
+        if (prev === '.') return '..';
+        if (prev === '..') return '...';
+        return '.';
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return <span className="inline-block w-4 text-left">{dots}</span>;
 }
 
 const getProviderIcon = (provider: string) => {
@@ -193,23 +225,16 @@ function ChatMessage({
                 ) : (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 rounded-md border bg-muted p-2 text-sm"
+                    className="flex flex-col items-center gap-2 rounded-md border bg-muted p-2 text-sm"
                   >
-                    <FileIcon className="size-4" />
-                    <a
-                      href={att.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline"
-                    >
-                      {att.name || "attached file"}
-                    </a>
+                    <FileText className="size-10" />
+                    <span className="text-sm truncate">{att.name}</span>
                   </div>
                 )
               )}
             </div>
           )}
-          <div className="flex flex-row-reverse items-center gap-x-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity absolute top-1/2 -translate-y-1/2 right-full">
+          <div className="flex flex-row-reverse items-center gap-x-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity absolute top-0 mt-1 mr-1 right-full">
             <IconButton
               variant="ghost"
               size="sm"
@@ -265,6 +290,33 @@ function ChatMessage({
   return (
     <div className="flex justify-start flex-col group">
       <div className="flex flex-col gap-2 max-w-2xl">
+        {/* Show reasoning/thinking section for assistant messages */}
+        {(() => {
+          const reasoningParts = message.parts?.filter((part: any) => part.type === "reasoning");
+          if (!reasoningParts || reasoningParts.length === 0) return null;
+
+          const isThinking = status === "streaming";
+          const thinkingLabel = isThinking ? "Thinking" : "Thoughts";
+
+          return (
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group/trigger">
+                <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]/trigger:rotate-90" />
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">{thinkingLabel}</span>
+                  {isThinking && <ThinkingDots />}
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="bg-muted rounded-lg p-3 text-sm prose prose-sm [&_p:not(.not-prose_p):not(:first-child)]:!mt-2">
+                  {reasoningParts.map((part: any, idx: number) => (
+                    <MemoizedMarkdown key={idx} content={part.reasoning} id={`${message.id}-reasoning-${idx}`} />
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })()}
         <div className="prose">{renderedParts}</div>
       </div>
 

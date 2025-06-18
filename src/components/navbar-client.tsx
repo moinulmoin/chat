@@ -3,9 +3,10 @@
 import { shareChatAction } from "@/actions";
 import { useMessageCount } from "@/hooks/use-message-count";
 import { signOut } from "@/lib/auth-client";
-import { Share2, TextSearch } from "lucide-react";
+import { Loader2, Share2, TextSearch } from "lucide-react";
 import { useParams } from "next/navigation";
 import { startTransition, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import { HistoryCommandPalette } from "./history-command-palette";
 import { NewChatButton } from "./new-chat-btn";
@@ -16,11 +17,50 @@ import { IconButton } from "./ui/icon-button";
 
 export function NavbarClient({ user }: { user: { name?: string | null; email?: string | null; image?: string | null } | null }) {
     const [historyOpen, setHistoryOpen] = useState(false);
+    const [isShareLoading, setIsShareLoading] = useState(false);
     const params = useParams();
     const chatId = params?.id as string | undefined;
     const { count } = useMessageCount(chatId);
 
     const shouldShowShareButton = count !== undefined && count >= 2;
+
+    const handleShare = () => {
+        if (!chatId) {
+            toast.error("Open a chat first");
+            return;
+        }
+
+        setIsShareLoading(true);
+        startTransition(async () => {
+            try {
+                const slug = await shareChatAction(chatId);
+                const url = `${window.location.origin}/share/${slug}`;
+                await navigator.clipboard.writeText(url);
+                toast.success("Share link copied to clipboard");
+            } catch (error) {
+                toast.error("Failed to copy link");
+            } finally {
+                setIsShareLoading(false);
+            }
+        });
+    };
+
+    const handleOpenHistory = () => {
+        setHistoryOpen(true);
+    };
+
+    // Keyboard shortcuts
+    useHotkeys('ctrl+s, meta+s', handleShare, {
+        preventDefault: true,
+        enabled: shouldShowShareButton && !isShareLoading,
+        description: 'Share current chat'
+    });
+
+    useHotkeys('ctrl+k, meta+k', handleOpenHistory, {
+        preventDefault: true,
+        description: 'Open chat history'
+    });
+
     return (
         <div className="flex items-center gap-2">
             <NewChatButton />
@@ -28,30 +68,18 @@ export function NavbarClient({ user }: { user: { name?: string | null; email?: s
                 <IconButton
                     variant="ghost"
                     size="icon"
-                    icon={<Share2 />}
-                    tooltip="Share this chat"
-                    onClick={() => {
-                        if (!chatId) {
-                            toast.error("Open a chat first");
-                            return;
-                        }
-                        startTransition(async () => {
-                            const slug = await shareChatAction(chatId);
-                            const url = `${window.location.origin}/share/${slug}`;
-                            navigator.clipboard
-                                .writeText(url)
-                                .then(() => toast.success("Share link copied to clipboard"))
-                                .catch(() => toast.error("Failed to copy link"));
-                        });
-                    }}
+                    icon={isShareLoading ? <Loader2 className="size-4 animate-[spin_0.3s_linear_infinite]" /> : <Share2 />}
+                    tooltip={`Share this chat (Ctrl+S)`}
+                    onClick={handleShare}
+                    disabled={isShareLoading}
                 />
             }
             <IconButton
                 variant="ghost"
                 size="icon"
                 icon={<TextSearch className=" size-5" />}
-                tooltip="History"
-                onClick={() => setHistoryOpen(true)}
+                tooltip={`History (Ctrl+K)`}
+                onClick={handleOpenHistory}
             />
             <HistoryCommandPalette open={historyOpen} onOpenChange={setHistoryOpen} />
             <DropdownMenu>
@@ -72,13 +100,6 @@ export function NavbarClient({ user }: { user: { name?: string | null; email?: s
                             </p>
                         </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                        Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                        Settings
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} >
                         Log out

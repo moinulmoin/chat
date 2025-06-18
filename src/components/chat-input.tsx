@@ -151,7 +151,7 @@ export function ChatInput({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-destructive text-destructive-foreground opacity-0 group-data-image:opacity-100 transition-opacity duration-200"
+                          className="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                           onClick={onRemoveAttachment}
                         >
                           <X className="!h-3 !w-3" />
@@ -219,7 +219,7 @@ export function ChatInput({
                 }
                 tooltip="Send message"
                 onClick={isSubmitted ? stop : onSubmit}
-                variant={input.trim() === "" ? "outline" : "default"}
+                variant={input.trim() === "" && !isStreaming && !isSubmitted ? "outline" : "default"}
               />
             </div>
           </div>

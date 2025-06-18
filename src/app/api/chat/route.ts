@@ -295,7 +295,8 @@ if webSearchTool is true, you must use the webSearch tool to search the web for 
 
         // Pipe into outer data stream
         result.mergeIntoDataStream(dataStream, {
-          sendReasoning: true,
+          sendSources: true,
+          sendReasoning: true
         });
       },
       onError: () => "Oops, an error occurred!"

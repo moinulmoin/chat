@@ -18,16 +18,16 @@ const DEFAULT_CAPABILITIES: Record<Capability, boolean> = {
 };
 
 export const MODELS = {
-  "gpt-4.1": {
-    provider: "openai",
-    id: "gpt-4.1",
-    displayName: "GPT 4.1",
-    description: "Flagship GPT model for complex tasks",
-    capabilities: {
-      ...DEFAULT_CAPABILITIES,
-      imageUpload: true,
-    }
-  },
+  // "gpt-4.1": {
+  //   provider: "openai",
+  //   id: "gpt-4.1",
+  //   displayName: "GPT 4.1",
+  //   description: "Flagship GPT model for complex tasks",
+  //   capabilities: {
+  //     ...DEFAULT_CAPABILITIES,
+  //     imageUpload: true,
+  //   }
+  // },
   "gpt-4.1-mini": {
     provider: "openai",
     id: "gpt-4.1-mini",
@@ -46,6 +46,11 @@ export const MODELS = {
     capabilities: {
       ...DEFAULT_CAPABILITIES,
       thinking: true,
+    },
+    providerOptions: {
+      openai: {
+        reasoningSummary: "auto"
+      }
     }
   },
   "gemini-2.5-flash-lite": {
@@ -99,24 +104,32 @@ export const MODELS = {
     providerOptions: {
       google: {
         thinkingConfig: {
-          thinkingBudget: 4096
+          thinkingBudget: 4096,
+          includeThoughts: true,
         }
       }
     }
   },
-  "gemini-2.5-pro": {
-    provider: "google",
-    id: "gemini-2.5-pro",
-    displayName: "Gemini 2.5 Pro",
-    description:
-      "Enhanced thinking and reasoning, multimodal understanding, advanced coding, and more",
-    capabilities: {
-      ...DEFAULT_CAPABILITIES,
-      thinking: true,
-      fileUpload: true,
-      imageUpload: true
-    }
-  },
+  // "gemini-2.5-pro": {
+  //   provider: "google",
+  //   id: "gemini-2.5-pro",
+  //   displayName: "Gemini 2.5 Pro",
+  //   description:
+  //     "Enhanced thinking and reasoning, multimodal understanding, advanced coding, and more",
+  //   capabilities: {
+  //     ...DEFAULT_CAPABILITIES,
+  //     thinking: true,
+  //     fileUpload: true,
+  //     imageUpload: true
+  //   },
+  //   providerOptions: {
+  //     google: {
+  //       thinkingConfig: {
+  //         includeThoughts: true,
+  //       }
+  //     }
+  //   }
+  // },
   "llama4-scout": {
     provider: "groq",
     id: "meta-llama/llama-4-scout-17b-16e-instruct",
@@ -128,10 +141,10 @@ export const MODELS = {
       imageUpload: true,
     }
   },
-  "qwen3-32b-thinking": {
+  "qwen3-32b": {
     provider: "groq",
     id: "qwen/qwen3-32b",
-    displayName: "Qwen 3 32B (Thinking)",
+    displayName: "Qwen 3 32B",
     description: "A powerful open model from Alibaba Cloud",
     capabilities: {
       ...DEFAULT_CAPABILITIES,
@@ -139,7 +152,8 @@ export const MODELS = {
     },
     providerOptions: {
       groq: {
-        reasoningEffort: "default"
+        reasoningEffort: "default",
+        reasoningFormat: "parsed"
       }
     }
   },
@@ -164,6 +178,11 @@ export const MODELS = {
       thinking: true,
       fileUpload: true,
       imageUpload: true,
+    },
+    providerOptions: {
+      xai: {
+        reasoningEffort: "low"
+      }
     }
   }
 } as const satisfies Record<string, ModelConfig>;
