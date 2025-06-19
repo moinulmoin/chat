@@ -1,4 +1,4 @@
-export type Capability = "tooling" | "thinking" | "fileUpload" | "imageGeneration" | "imageUpload";
+export type Capability = "tooling" | "fileUpload" | "imageGeneration" | "imageUpload" | "thinking";
 
 export interface ModelConfig {
   provider: string;
@@ -11,21 +11,22 @@ export interface ModelConfig {
 
 const DEFAULT_CAPABILITIES: Record<Capability, boolean> = {
   tooling: true,
-  thinking: false,
   fileUpload: false,
   imageGeneration: false,
-  imageUpload: false
+  imageUpload: false,
+  thinking: false,
 };
 
 export const MODELS = {
-  // "gpt-4.1": {
+  // "gpt-image-1": {
   //   provider: "openai",
-  //   id: "gpt-4.1",
-  //   displayName: "GPT 4.1",
-  //   description: "Flagship GPT model for complex tasks",
+  //   id: "gpt-image-1",
+  //   displayName: "GPT Image Generation",
+  //   description: "Flagship GPT model for image generation",
   //   capabilities: {
   //     ...DEFAULT_CAPABILITIES,
-  //     imageUpload: true,
+  //     imageGeneration: true,
+  //     tooling: false,
   //   }
   // },
   "gpt-4.1-mini": {
@@ -97,9 +98,9 @@ export const MODELS = {
     description: "Adaptive thinking, cost efficiency",
     capabilities: {
       ...DEFAULT_CAPABILITIES,
-      thinking: true,
       fileUpload: true,
-      imageUpload: true
+      imageUpload: true,
+      thinking: true,
     },
     providerOptions: {
       google: {
@@ -175,9 +176,9 @@ export const MODELS = {
     description: "A faster, more efficient Grok model",
     capabilities: {
       ...DEFAULT_CAPABILITIES,
-      thinking: true,
       fileUpload: true,
       imageUpload: true,
+      thinking: true,
     },
     providerOptions: {
       xai: {

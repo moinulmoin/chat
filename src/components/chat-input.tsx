@@ -123,8 +123,8 @@ export function ChatInput({
                     accept={supportedFileTypes.join(",")}
                   />
                   {uploadedAttachment ? (
-                    <div className="relative">
-                      <div className="relative w-10 h-10 rounded-md rounded-bl-3xl group">
+                    <div className="relative group">
+                      <div className="relative w-10 h-10 rounded-md rounded-bl-3xl">
                         {uploadedAttachment.status === "uploading" ? (
                           <div className="absolute inset-0 bg-muted flex items-center justify-center rounded-md rounded-bl-xl">
                             <Loader2 className="h-5 w-5 animate-[spin_0.25s_linear_infinite]" />
@@ -150,7 +150,7 @@ export function ChatInput({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          className="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                           onClick={onRemoveAttachment}
                         >
                           <X className="!h-3 !w-3" />

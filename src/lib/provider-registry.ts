@@ -6,7 +6,6 @@ import {
   createProviderRegistry,
   customProvider
 } from "ai";
-import { z } from "zod";
 
 // Centralised provider registry – every part of the app should import from here
 // instead of creating its own provider instances.
@@ -25,16 +24,18 @@ const openaiProvider = customProvider({
     "gpt-4.1": originalOpenAI("gpt-4.1"),
     "gpt-4.1-mini": originalOpenAI("gpt-4.1-mini"),
     "o4-mini": originalOpenAI("o4-mini"),
-    "gpt-image-gen": originalOpenAI("gpt-4o-mini-image-gen")
   },
+  // imageModels: {
+  //   "gpt-image-gen": originalOpenAI.image("gpt-image-1")
+  // }
 });
 
 // Google Gemini – keep aliases for Flash & Pro
 const googleProvider = customProvider({
   languageModels: {
-    "gemini-2.5-flash": originalGoogle("gemini-2.5-flash-preview-05-20"),
-    "gemini-2.5-flash-thinking": originalGoogle("gemini-2.5-flash-preview-05-20"),
-    "gemini-2.5-pro": originalGoogle("gemini-2.5-pro-preview-06-05"),
+    "gemini-2.5-flash": originalGoogle("gemini-2.5-flash"),
+    "gemini-2.5-flash-thinking": originalGoogle("gemini-2.5-flash"),
+    // "gemini-2.5-pro": originalGoogle("gemini-2.5-pro"),
     "gemini-2.5-flash-lite": originalGoogle("gemini-2.5-flash-lite-preview-06-17")
   },
 });

@@ -11,7 +11,7 @@ import {
 import { IconButton } from "@/components/ui/icon-button";
 import { Chat } from "@/generated/prisma";
 import { useChats } from "@/hooks/use-chats";
-import { differenceInCalendarDays, parseISO } from "date-fns";
+import { differenceInCalendarDays, differenceInHours, differenceInMinutes, format, parseISO } from "date-fns";
 import { Check, Edit, Split, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
@@ -29,6 +29,20 @@ interface HistoryCommandPaletteProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const getRelativeTime = (date: Date) => {
+  const now = new Date();
+  const minutes = differenceInMinutes(now, date);
+  const hours = differenceInHours(now, date);
+  const days = differenceInCalendarDays(now, date);
+
+  if (minutes < 1) return "now";
+  if (minutes < 60) return `${minutes}m`;
+  if (hours < 24) return `${hours}h`;
+  if (days < 7) return `${days}d`;
+
+  return format(date, "MMM d");
+};
 
 export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPaletteProps) {
   const [query, setQuery] = useState("");
@@ -165,6 +179,8 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
           }
 
           const chat = item.chat;
+          const relativeTime = getRelativeTime(parseISO(chat.createdAt as string));
+
           return (
             <CommandItem
               key={chat.id}
@@ -198,6 +214,11 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
               </div>
 
               <div className="flex items-center gap-1">
+                {/* Timestamp - visible by default, hidden on hover */}
+                <span className="text-xs text-muted-foreground group-hover:opacity-0 transition-opacity duration-200 min-w-fit">
+                  {relativeTime} ago
+                </span>
+
                 {editingChatId === chat.id ? (
                   <div className="flex items-center gap-1">
                     <IconButton
@@ -264,7 +285,8 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
                         className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
                       />
                     )}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                    {/* Actions - hidden by default, visible on hover */}
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1">
                       <IconButton
                         icon={<Edit size={14} />}
                         tooltip="Edit title"
