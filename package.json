@@ -18,10 +18,11 @@
     "@ai-sdk/provider-utils": "3.0.0-alpha.10",
     "@ai-sdk/react": "1.2.12",
     "@ai-sdk/xai": "1.2.16",
-    "@nanostores/react": "^1.0.0",
     "@nanostores/persistent": "^1.0.0",
+    "@nanostores/react": "^1.0.0",
     "@prisma/client": "^6.10.0",
     "@prisma/extension-accelerate": "^2.0.1",
+    "@radix-ui/react-dialog": "^1.1.14",
     "@tailwindcss/typography": "^0.5.16",
     "@tavily/core": "^0.5.7",
     "@vercel/blob": "^1.1.1",
@@ -53,7 +54,6 @@
     "sonner": "^2.0.5",
     "swr": "^2.3.3",
     "tailwind-merge": "^3.3.0",
-    "virtua": "^0.41.5",
     "zod": "^3.25.56"
   },
   "devDependencies": {

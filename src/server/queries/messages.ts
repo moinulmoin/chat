@@ -8,6 +8,9 @@ export async function getMessagesByChatId(chatId: string) {
     orderBy: {
       createdAt: "asc",
     },
+    include: {
+      attachments: true,
+    },
   });
 }
 

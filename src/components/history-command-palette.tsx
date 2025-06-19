@@ -1,13 +1,12 @@
 "use client";
 
-import { deleteChat, updateChatTitle } from "@/app/actions";
+import { deleteChat, updateChatTitle } from "@/actions";
 import {
   CommandDialog,
   CommandEmpty,
-  CommandGroup,
   CommandInput,
   CommandItem,
-  VirtualizedCommandList
+  CommandList
 } from "@/components/ui/command";
 import { IconButton } from "@/components/ui/icon-button";
 import { Chat } from "@/generated/prisma";
@@ -15,9 +14,8 @@ import { useChats } from "@/hooks/use-chats";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { Check, Edit, Split, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { VListHandle } from "virtua";
 
 type ChatWithDate = Chat & {
   createdAt: string | Date;
@@ -34,30 +32,18 @@ interface HistoryCommandPaletteProps {
 
 export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPaletteProps) {
   const [query, setQuery] = useState("");
-  const { chats, mutate, setSize, hasMore, isLoading } = useChats(open, query);
+  const { chats, mutate, isLoading } = useChats(open, query);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const listRef = useRef<VListHandle>(null);
-
-  const handleScroll = (offset: number) => {
-    const list = listRef.current;
-    if (!list || !hasMore || isLoading) {
-      return;
-    }
-
-    const { scrollSize, viewportSize } = list;
-
-    if (offset + viewportSize >= scrollSize - 20) {
-      setSize((size) => size + 1);
-    }
-  };
 
   const handleSelect = (chatId: string) => {
-    router.push(`/chat/${chatId}`);
     onOpenChange(false);
+    startTransition(async () => {
+      router.push(`/chat/${chatId}`);
+    });
   };
 
   const handleStartEdit = (chat: ChatWithDate) => {
@@ -142,34 +128,51 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
   }, [chats]);
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} className="max-w-2xl">
-      <CommandInput placeholder="Search chat history..." value={query} onValueChange={setQuery} />
-      <VirtualizedCommandList
-        style={{ height: "600px" }}
-        count={items.length}
-        ref={listRef}
-        onScroll={handleScroll}
-        overscan={4}
+    <CommandDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      className="max-w-2xl rounded-2xl border-0 bg-white/95 backdrop-blur-sm shadow-2xl"
+    >
+      <div className="border-b border-border/10">
+        <CommandInput
+          placeholder="Search chat history..."
+          value={query}
+          onValueChange={setQuery}
+          className="px-4 py-3 border-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-muted-foreground/60 text-base"
+        />
+      </div>
+      <CommandList
+        style={{ height: "400px" }}
+        className="p-1"
       >
-        {isLoading && !chats.length && <div className="p-4 text-sm text-center">Loading...</div>}
-        {!isLoading && <CommandEmpty>No results found.</CommandEmpty>}
+        {isLoading && !chats.length && (
+          <CommandItem disabled className="p-8 text-sm text-center text-muted-foreground justify-center">
+            Loading...
+          </CommandItem>
+        )}
+        {!isLoading && <CommandEmpty className="py-8 text-muted-foreground">No results found.</CommandEmpty>}
         {items.map((item) => {
           if (item.type === "header") {
             return (
-              <div className="" key={item.label}>
-                <CommandGroup heading={item.label} className="!py-1" />
-              </div>
+              <CommandItem
+                key={item.label}
+                disabled
+                className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider !bg-transparent cursor-default"
+              >
+                {item.label}
+              </CommandItem>
             );
           }
 
           const chat = item.chat;
           return (
-            <div className="" key={chat.id}>
-              <CommandItem
-                onSelect={() => !editingChatId && !deletingChatId && handleSelect(chat.id)}
-                value={chat.id}
-                className="flex justify-between items-center !py-1 group"
-              >
+            <CommandItem
+              key={chat.id}
+              onSelect={() => !editingChatId && !deletingChatId && handleSelect(chat.id)}
+              value={chat.id}
+              className="flex items-center justify-between !py-2 px-2 rounded-lg group hover:bg-accent/50 data-[selected=true]:bg-accent/70 cursor-pointer transition-colors"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 {editingChatId === chat.id ? (
                   <input
                     type="text"
@@ -184,111 +187,114 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
                         handleCancelEdit(chat.id);
                       }
                     }}
-                    className="bg-transparent border-none w-full"
+                    className="bg-transparent border-none w-full font-medium text-foreground focus:outline-none"
                     autoFocus
                   />
                 ) : (
-                  <span>{chat.title || "New Chat"}</span>
+                  <span className="font-medium text-foreground truncate">
+                    {chat.title || "New Chat"}
+                  </span>
                 )}
-                <div className="flex items-center">
-                  {editingChatId === chat.id ? (
-                    <>
+              </div>
+
+              <div className="flex items-center gap-1">
+                {editingChatId === chat.id ? (
+                  <div className="flex items-center gap-1">
+                    <IconButton
+                      icon={<Check size={14} />}
+                      tooltip="Save changes"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleConfirmEdit(chat.id);
+                      }}
+                      className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                    />
+                    <IconButton
+                      icon={<X size={14} />}
+                      tooltip="Cancel editing"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCancelEdit(chat.id);
+                      }}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    />
+                  </div>
+                ) : deletingChatId === chat.id ? (
+                  <div className="flex items-center gap-1">
+                    <IconButton
+                      icon={<Check size={14} />}
+                      tooltip="Confirm delete"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(chat.id);
+                      }}
+                      className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    />
+                    <IconButton
+                      icon={<X size={14} />}
+                      tooltip="Cancel delete"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingChatId(null);
+                      }}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    {chat.parentChatId && (
                       <IconButton
-                        icon={<Check size={16} />}
-                        tooltip="Save changes"
+                        icon={<Split size={14} />}
+                        tooltip="Go to parent chat"
                         variant="ghost"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleConfirmEdit(chat.id);
+                          router.push(`/chat/${chat.parentChatId}`);
+                          onOpenChange(false);
                         }}
-                        className="p-1 h-auto w-auto"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
                       />
+                    )}
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                       <IconButton
-                        icon={<X size={16} />}
-                        tooltip="Cancel editing"
+                        icon={<Edit size={14} />}
+                        tooltip="Edit title"
                         variant="ghost"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleCancelEdit(chat.id);
+                          handleStartEdit(chat);
                         }}
-                        className="p-1 h-auto w-auto"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
                       />
-                    </>
-                  ) : deletingChatId === chat.id ? (
-                    <>
                       <IconButton
-                        icon={<Check size={16} />}
-                        tooltip="Confirm delete"
+                        icon={<Trash2 size={14} />}
+                        tooltip="Delete chat"
                         variant="ghost"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDelete(chat.id);
+                          setDeletingChatId(chat.id);
                         }}
-                        className="p-1 h-auto w-auto"
+                        className="h-7 w-7 text-muted-foreground hover:text-red-600"
                       />
-                      <IconButton
-                        icon={<X size={16} />}
-                        tooltip="Cancel delete"
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingChatId(null);
-                        }}
-                        className="p-1 h-auto w-auto"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      {chat.parentChatId && (
-                        <IconButton
-                          icon={<Split size={16} />}
-                          tooltip="Go to parent chat"
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/chat/${chat.parentChatId}`);
-                            onOpenChange(false);
-                          }}
-                          className="p-1 h-auto w-auto"
-                        />
-                      )}
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
-                        <IconButton
-                          icon={<Edit size={16} />}
-                          tooltip="Edit title"
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStartEdit(chat);
-                          }}
-                          className="p-1 h-auto w-auto"
-                        />
-                        <IconButton
-                          icon={<Trash2 size={16} />}
-                          tooltip="Delete chat"
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeletingChatId(chat.id);
-                          }}
-                          className="p-1 h-auto w-auto"
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </CommandItem>
-            </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CommandItem>
           );
         })}
-      </VirtualizedCommandList>
+      </CommandList>
     </CommandDialog>
   );
 }

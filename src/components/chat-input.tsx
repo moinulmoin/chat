@@ -36,7 +36,6 @@ export function ChatInput({
   input,
   setInput,
   onSubmit,
-  placeholder = "How can t0Chat help?",
   status,
   stop,
   webSearch,
@@ -97,7 +96,7 @@ export function ChatInput({
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={placeholder}
+              placeholder="What's on your mind?"
               className="w-full resize-none border-0 p-2 shadow-none bg-transparent text-base focus-visible:ring-0 focus-visible:ring-offset-0 h-auto"
               rows={1}
               onKeyDown={(e) => {
@@ -219,7 +218,9 @@ export function ChatInput({
                 }
                 tooltip="Send message"
                 onClick={isSubmitted ? stop : onSubmit}
-                variant={input.trim() === "" && !isStreaming && !isSubmitted ? "outline" : "default"}
+                variant={
+                  input.trim() === "" && !isStreaming && !isSubmitted ? "outline" : "default"
+                }
               />
             </div>
           </div>

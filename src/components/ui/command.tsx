@@ -1,9 +1,10 @@
 "use client"
 
+import * as React from "react"
 import { Command as CommandPrimitive } from "cmdk"
 import { SearchIcon } from "lucide-react"
-import * as React from "react"
 
+import { cn } from "@/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { cn } from "@/lib/utils"
 
 function Command({
   className,
@@ -84,14 +84,13 @@ function CommandInput({
 
 function CommandList({
   className,
-  virtualized,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.List> & { virtualized?: boolean }) {
+}: React.ComponentProps<typeof CommandPrimitive.List>) {
   return (
     <CommandPrimitive.List
       data-slot="command-list"
       className={cn(
-        !virtualized && "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto",
+        "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto",
         className
       )}
       {...props}
@@ -172,10 +171,14 @@ function CommandShortcut({
   )
 }
 
-export * from "./virtualized-command-list"
 export {
   Command,
-  CommandDialog, CommandEmpty,
-  CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandShortcut,
+  CommandSeparator,
 }
-

@@ -19,8 +19,8 @@ const VirtualizedCommandList = React.forwardRef<
       className={cn("scroll-py-1", className)}
     >
       <VList ref={ref} {...props}>
-        {Children.map((child) => (
-          <div key={(child as React.ReactElement).key || undefined}>{child}</div>
+        {Children.map((child, index) => (
+          <div key={React.isValidElement(child) ? child.key || index : index}>{child}</div>
         ))}
       </VList>
     </CommandPrimitive.List>
