@@ -48,17 +48,15 @@ function EmptyState({ onQuestionClick }: { onQuestionClick: (question: string) =
 
 function ChatClient({
   initialMessages,
-  chatId,
-  modelKey
+  chatId
 }: {
   initialMessages: UIMessage[];
   chatId: string;
-  modelKey: ModelKey;
 }) {
   const modelKeyFromStore = useStore(currentModelKeyAtom);
   const webSearch = useStore(webSearchAtom);
   const [uploadedAttachment, setUploadedAttachment] = useState<UploadedAttachment | null>(null);
-  const finalModelKey = modelKeyFromStore || modelKey;
+  const finalModelKey = modelKeyFromStore;
   const {
     messages,
     handleSubmit: originalHandleSubmit,
