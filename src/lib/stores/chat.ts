@@ -11,7 +11,8 @@ export interface ChatStore {
 // Atom persisted to localStorage for model key only
 export const selectedModelKeyAtom = persistentAtom<ModelKey>(
   "selectedModelKey",
-  defaultModelKey
+  defaultModelKey,
+  { listen: false }
 );
 
 // Map store for rest of UI state (not persistent)

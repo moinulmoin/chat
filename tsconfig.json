@@ -20,7 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@/convex/*": ["./convex/*"]
+      "@/convex/*": ["./convex/*"],
+      "@nanostores/persistent": ["./node_modules/@nanostores/persistent/index.d.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
