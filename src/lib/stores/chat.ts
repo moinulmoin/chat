@@ -1,28 +1,18 @@
 import { defaultModelKey } from "@/lib/chat-settings";
 import { ModelKey } from "@/lib/model-registry";
-import { map } from "nanostores";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — external module provided at runtime
+import { persistentMap } from "@nanostores/persistent";
 
 export interface ChatStore {
   selectedModelKey: ModelKey;
   webSearch: boolean;
 }
 
-export const chatStore = map<ChatStore>({
+export const chatStore = persistentMap<ChatStore>("chat:", {
   selectedModelKey: defaultModelKey,
   webSearch: false
 });
-
-// Persist selectedModelKey to localStorage (client-side only)
-if (typeof window !== "undefined") {
-  const storedModelKey = window.localStorage.getItem("selectedModelKey");
-  if (storedModelKey) {
-    chatStore.setKey("selectedModelKey", storedModelKey as ModelKey);
-  }
-
-  chatStore.subscribe((current) => {
-    window.localStorage.setItem("selectedModelKey", current.selectedModelKey);
-  });
-}
 
 export const setWebSearch = (webSearch: boolean) => {
   chatStore.setKey("webSearch", webSearch);
