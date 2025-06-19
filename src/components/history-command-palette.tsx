@@ -142,23 +142,27 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
   }, [chats]);
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} className="max-w-xl">
+    <CommandDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      className="max-w-2xl scale-[1.5]"
+    >
       <CommandInput
         placeholder="Search chat history..."
         value={query}
         onValueChange={setQuery}
       />
       <VirtualizedCommandList
-        style={{ height: "400px" }}
+        style={{ height: "600px" }}
         count={items.length}
         ref={listRef}
         onScroll={handleScroll}
         overscan={4}
       >
-        <CommandEmpty>No results found.</CommandEmpty>
         {isLoading && !chats.length && (
           <div className="p-4 text-sm text-center">Loading...</div>
         )}
+        {!isLoading && <CommandEmpty>No results found.</CommandEmpty>}
         {items.map((item) => {
           if (item.type === "header") {
             return (

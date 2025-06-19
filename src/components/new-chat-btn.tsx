@@ -1,9 +1,9 @@
 "use client";
 
 import { useMessageCount } from "@/hooks/use-message-count";
-import { Loader2, SquarePen } from "lucide-react";
+import { SquarePen } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { IconButton } from "./ui/icon-button";
 
@@ -12,23 +12,18 @@ export function NewChatButton() {
   const params = useParams();
   const chatId = params?.id as string;
   const { count } = useMessageCount(chatId);
-  const [isLoading, setIsLoading] = useState(false);
 
   const shouldShow = count !== undefined && count >= 2;
 
-  const handleNewChat = async () => {
-    setIsLoading(true);
-    router.push("/chat")
+  const handleNewChat = () => {
+    // Directly navigate to the new chat page without showing a loading spinner
+    router.push("/chat");
   };
-
-  useEffect(() => {
-    return () => setIsLoading(false);
-  }, []);
 
   // Keyboard shortcut for new chat
   useHotkeys('ctrl+c, meta+c', handleNewChat, {
     preventDefault: true,
-    enabled: shouldShow && !isLoading,
+    enabled: shouldShow,
     description: 'Open new chat'
   });
 
@@ -40,16 +35,9 @@ export function NewChatButton() {
     <IconButton
       variant="ghost"
       size="icon"
-      icon={
-        isLoading ? (
-          <Loader2 className="size-4 animate-[spin_0.3s_linear_infinite]" />
-        ) : (
-          <SquarePen />
-        )
-      }
+      icon={<SquarePen />}
       tooltip={`New chat (Ctrl+C)`}
       onClick={handleNewChat}
-      disabled={isLoading}
     />
   );
 }

@@ -10,11 +10,13 @@ import { useStore } from "@nanostores/react";
 import { upload } from "@vercel/blob/client";
 import { Message, UIMessage } from "ai";
 import { nanoid } from "nanoid";
-import { startTransition, useCallback, useState } from "react";
+import { startTransition, useCallback, useState, useEffect, useRef } from "react";
 import { ChatInput } from "./chat-input";
 import { MemoizedChatMessage } from "./chat-message";
 import ChatMessageContainer from "./chat-message-container";
 import { TextSelectionMenu } from "./text-selection-menu";
+import { mutate } from "swr";
+import { swrKeys } from "@/lib/keys";
 
 const STARTER_QUESTIONS = [
   "Generate creative ideas for a project",
@@ -172,9 +174,10 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         prevMessages.filter((m: Message) => m.id !== messageId)
       );
 
+      const keyToUse = modelKey ?? selectedModelKey;
       reload({
         body: {
-          modelKey: selectedModelKey
+          modelKey: keyToUse
         }
       });
     },
@@ -237,6 +240,15 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
       content: `Explain this: ${selectedText}`
     });
   }, []);
+
+  const didInvalidateRef = useRef(false);
+
+  useEffect(() => {
+    if (chatId && messages.length >= 2 && !didInvalidateRef.current) {
+      mutate(swrKeys.messageCount(chatId));
+      didInvalidateRef.current = true;
+    }
+  }, [chatId, messages.length]);
 
   return (
     <div className="flex flex-col flex-1 w-full">

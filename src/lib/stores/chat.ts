@@ -12,6 +12,18 @@ export const chatStore = map<ChatStore>({
   webSearch: false
 });
 
+// Persist selectedModelKey to localStorage (client-side only)
+if (typeof window !== "undefined") {
+  const storedModelKey = window.localStorage.getItem("selectedModelKey");
+  if (storedModelKey) {
+    chatStore.setKey("selectedModelKey", storedModelKey as ModelKey);
+  }
+
+  chatStore.subscribe((current) => {
+    window.localStorage.setItem("selectedModelKey", current.selectedModelKey);
+  });
+}
+
 export const setWebSearch = (webSearch: boolean) => {
   chatStore.setKey("webSearch", webSearch);
 };
