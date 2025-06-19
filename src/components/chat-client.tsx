@@ -3,7 +3,7 @@
 import { deleteTrailingMessagesAction, updateMessageAction } from "@/actions";
 import { useAutoResume } from "@/hooks/use-auto-resume";
 import { ModelKey } from "@/lib/model-registry";
-import { chatStore, setSelectedModel } from "@/lib/stores/chat";
+import { currentModelKeyAtom, webSearchAtom } from "@/lib/stores/chat";
 import { UploadedAttachment } from "@/lib/types";
 import { useChat } from "@ai-sdk/react";
 import { useStore } from "@nanostores/react";
@@ -44,8 +44,10 @@ function EmptyState({ onQuestionClick }: { onQuestionClick: (question: string) =
 }
 
 function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[]; chatId: string }) {
-  const { selectedModelKey, webSearch } = useStore(chatStore);
+  const selectedModelKey = useStore(currentModelKeyAtom);
+  const webSearch = useStore(webSearchAtom);
   const [uploadedAttachment, setUploadedAttachment] = useState<UploadedAttachment | null>(null);
+  const didInvalidateRef = useRef(false);
   const {
     messages,
     handleSubmit: originalHandleSubmit,
@@ -70,6 +72,12 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         modelKey: selectedModelKey,
         webSearch
       };
+    },
+    onFinish: () => {
+      if (chatId && messages.length >= 2 && !didInvalidateRef.current) {
+        mutate(swrKeys.messageCount(chatId));
+        didInvalidateRef.current = true;
+      }
     }
   });
 
@@ -163,7 +171,7 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
   const handleRegenerate = useCallback(
     ({ messageId, modelKey }: { messageId: string; modelKey?: ModelKey }) => {
       if (modelKey) {
-        setSelectedModel(modelKey);
+        currentModelKeyAtom.set(modelKey);
       }
 
       startTransition(async () => {
@@ -240,15 +248,6 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
       content: `Explain this: ${selectedText}`
     });
   }, []);
-
-  const didInvalidateRef = useRef(false);
-
-  useEffect(() => {
-    if (chatId && messages.length >= 2 && !didInvalidateRef.current) {
-      mutate(swrKeys.messageCount(chatId));
-      didInvalidateRef.current = true;
-    }
-  }, [chatId, messages.length]);
 
   return (
     <div className="flex flex-col flex-1 w-full">

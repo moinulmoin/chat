@@ -145,7 +145,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
     <CommandDialog
       open={open}
       onOpenChange={onOpenChange}
-      className="max-w-2xl scale-[1.5]"
+      className="max-w-2xl"
     >
       <CommandInput
         placeholder="Search chat history..."
