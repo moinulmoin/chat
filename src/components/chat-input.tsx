@@ -5,7 +5,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Textarea } from "@/components/ui/textarea";
 import { isCapabilitySupported } from "@/lib/chat-settings";
 import { ModelKey } from "@/lib/model-registry";
-import { currentModelKeyAtom, toggleWebSearch } from "@/lib/stores/chat";
+import { setModelKey, toggleWebSearch } from "@/lib/stores/chat";
 import { UploadedAttachment } from "@/lib/types";
 import { ChatStatus } from "@/types";
 import { ArrowUp, FileText, Globe, Loader2, Paperclip, Square, X } from "lucide-react";
@@ -50,7 +50,7 @@ export function ChatInput({
   const isStreaming = status === "streaming" || status !== "ready";
 
   const handleModelChange = (newModelKey: ModelKey) => {
-    currentModelKeyAtom.set(newModelKey);
+    setModelKey(newModelKey);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
