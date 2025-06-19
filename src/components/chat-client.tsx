@@ -26,9 +26,9 @@ function EmptyState({ onQuestionClick }: { onQuestionClick: (question: string) =
   return (
     <div className="flex flex-col items-center justify-center h-full min-h-[60vh] text-center space-y-4">
       <div className="space-y-2">
-        <h2 className="text-lg font-medium">Welcome to cmdchat</h2>
+        <h2 className="text-lg font-medium">Welcome to /chat</h2>
         <p className="text-sm text-muted-foreground">
-          Navigate with commands, not clicks
+          Where conversations begin with /
         </p>
       </div>
 
@@ -266,17 +266,6 @@ function ChatClient({
           <EmptyState onQuestionClick={(question) => setInput(question)} />
         ) : (
                     messages.map((message, index) => {
-            // Calculate message numbers for user and AI messages separately
-            const userMessages = messages.filter(m => m.role === 'user');
-            const aiMessages = messages.filter(m => m.role === 'assistant');
-
-            let messageNumber = 0;
-            if (message.role === 'user') {
-              messageNumber = userMessages.findIndex(m => m.id === message.id) + 1;
-            } else if (message.role === 'assistant') {
-              messageNumber = aiMessages.findIndex(m => m.id === message.id) + 1;
-            }
-
             // Check if this message is selected (using array index)
             const isSelected = selectionMode === 'select' && selectedMessageIndex === index;
 
@@ -289,7 +278,6 @@ function ChatClient({
               <MemoizedChatMessage
                 key={message.id}
                 message={message}
-                messageNumber={messageNumber}
                 messageIndex={index}
                 isSelected={isSelected}
                 selectionMode={selectionMode}

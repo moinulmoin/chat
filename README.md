@@ -1,8 +1,8 @@
-# t0Chat - Advanced AI Chat Interface
+# /chat - Advanced AI Chat Interface
 
 > **The most feature-rich, multi-model AI chat application for power users and developers**
 
-t0Chat is a sophisticated Next.js-based chat application that provides an unparalleled AI conversation experience with advanced features, multi-model support, and professional-grade capabilities.
+/chat is a sophisticated Next.js-based chat application that provides an unparalleled AI conversation experience with advanced features, multi-model support, and professional-grade capabilities.
 
 ## 🚀 **Core Features**
 
@@ -211,7 +211,7 @@ BLOB_READ_WRITE_TOKEN="vercel_blob_token"
 ```bash
 # Clone repository
 git clone <repository-url>
-cd t0chat
+cd /chat
 
 # Install dependencies
 pnpm install
@@ -247,4 +247,4 @@ This project is proprietary software. All rights reserved.
 
 ---
 
-**t0Chat** - *Where AI conversations become extraordinary*
+**/chat** - *Where AI conversations become extraordinary*

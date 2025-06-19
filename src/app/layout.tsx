@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "cmdchat",
-  description: "cmdchat - The commands inspired AI chat interface. Navigate with slash commands, not mouse clicks."
+  title: "/chat",
+  description: "/chat - Where conversations begin with /. Navigate with slash commands, not mouse clicks."
 };
 
 export default function RootLayout({

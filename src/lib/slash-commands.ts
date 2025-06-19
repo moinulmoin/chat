@@ -241,10 +241,6 @@ export const CORE_COMMANDS: SlashCommand[] = [
         return;
       }
 
-      // Get message number for feedback
-      const messageNum = messages.filter((m: any) => m.role === 'user')
-        .findIndex((m: any) => m.id === selectedMessage.id) + 1;
-
       // Enter inline editing mode
       setIsInlineEditing(true);
       setEditingMessageId(selectedMessage.id);
@@ -253,7 +249,7 @@ export const CORE_COMMANDS: SlashCommand[] = [
       setInput('');
       if (setSelectionMode) setSelectionMode(null);
 
-      toast.success(`Editing U-${messageNum}...`);
+      toast.success(`Editing user message...`);
     }
   },
   {
@@ -294,12 +290,8 @@ export const CORE_COMMANDS: SlashCommand[] = [
       // Copy to clipboard
       if (typeof navigator !== 'undefined' && navigator.clipboard) {
         navigator.clipboard.writeText(textContent).then(() => {
-          const messageType = selectedMessage.role === 'user' ? 'U' : 'A';
-          const messageNum = selectedMessage.role === 'user'
-            ? messages.filter((m: any) => m.role === 'user').findIndex((m: any) => m.id === selectedMessage.id) + 1
-            : messages.filter((m: any) => m.role === 'assistant').findIndex((m: any) => m.id === selectedMessage.id) + 1;
-
-          toast.success(`${messageType}-${messageNum} copied to clipboard`);
+          const messageType = selectedMessage.role === 'user' ? 'User' : 'AI';
+          toast.success(`${messageType} message copied to clipboard`);
 
           // Clear input and exit selection mode after successful copy
           setInput('');
@@ -343,13 +335,6 @@ export const CORE_COMMANDS: SlashCommand[] = [
         return;
       }
 
-      // Get message number for feedback
-      const messageNum = messages.filter((m: any) => m.role === 'user')
-        .findIndex((m: any) => m.id === selectedMessage.id) + 1;
-
-      // Confirm deletion (simple confirmation via toast)
-      toast.success(`Deleting U-${messageNum}...`);
-
       // Execute deletion
       handleUserMessageDelete({ messageId: selectedMessage.id });
 
@@ -357,7 +342,7 @@ export const CORE_COMMANDS: SlashCommand[] = [
       setInput('');
       if (setSelectionMode) setSelectionMode(null);
 
-      toast.success(`U-${messageNum} deleted successfully`);
+      toast.success(`User message deleted successfully`);
     }
   },
     {
@@ -387,17 +372,13 @@ export const CORE_COMMANDS: SlashCommand[] = [
         return;
       }
 
-      // Get message number for feedback
-      const messageNum = messages.filter((m: any) => m.role === 'assistant')
-        .findIndex((m: any) => m.id === selectedMessage.id) + 1;
-
       if (args.length === 0) {
         // Show model selection UI for regenerate
         if (setShowModelSelection && setRegenerateMode) {
           setRegenerateMode(selectedMessage.id); // Store which message to regenerate
           setShowModelSelection(true);
           setInput('/regenerate ');
-          toast.success(`Select model to regenerate A-${messageNum}`);
+          toast.success(`Select model to regenerate AI message`);
           return;
         }
 
@@ -407,7 +388,7 @@ export const CORE_COMMANDS: SlashCommand[] = [
           return;
         }
 
-        toast.success(`Regenerating A-${messageNum}...`);
+        toast.success(`Regenerating AI message...`);
         handleRegenerate({ messageId: selectedMessage.id });
         setInput('');
         if (setSelectionMode) setSelectionMode(null);
@@ -421,7 +402,7 @@ export const CORE_COMMANDS: SlashCommand[] = [
       }
 
       const modelKey = args[0] as ModelKey;
-      toast.success(`Regenerating A-${messageNum} with ${modelKey}...`);
+      toast.success(`Regenerating AI message with ${modelKey}...`);
 
       // Execute regeneration with specified model
       handleRegenerate({ messageId: selectedMessage.id, modelKey });
@@ -462,12 +443,8 @@ export const CORE_COMMANDS: SlashCommand[] = [
         return;
       }
 
-      // Get message number for feedback
-      const messageNum = messages.filter((m: any) => m.role === 'assistant')
-        .findIndex((m: any) => m.id === selectedMessage.id) + 1;
-
       try {
-        toast.success(`Branching from A-${messageNum}...`);
+        toast.success(`Branching from AI message...`);
 
         // Import the branch action dynamically
         const { branchChatAction } = await import("@/actions");
@@ -704,7 +681,7 @@ export async function executeSlashCommand(
       if (matchingCommands.length === 1) {
         // Auto-complete to the single matching available command
         command = matchingCommands[0];
-        toast.success(`Auto-completed /${parsed.command} → /${command.command}`);
+        toast.success(`Auto-completed /${parsed.command} → /${command?.command}`);
       } else if (matchingCommands.length > 1) {
         const commandNames = matchingCommands.map(cmd => cmd!.command).join(', /');
         return {

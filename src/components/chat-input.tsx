@@ -598,7 +598,7 @@ export function ChatInput({
         {/* Branding text */}
         <div className="text-center mt-2">
           <p className="text-xs text-muted-foreground">
-            Brought to you by <span className="font-mono font-medium">cmdchat</span>
+            Brought to you by <span className="font-mono font-medium">/chat</span>
           </p>
         </div>
       </div>

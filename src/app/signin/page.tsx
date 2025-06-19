@@ -15,7 +15,7 @@ export default function SignInPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-center space-x-2">
             <Terminal className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-mono font-medium">cmdchat</h1>
+            <h1 className="text-xl font-mono font-medium">/chat</h1>
           </div>
           <p className="text-sm text-muted-foreground">
             Navigate with commands, not clicks

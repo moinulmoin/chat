@@ -91,16 +91,16 @@ export function ModelSelection({
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1">
                     {config.capabilities.thinking && (
-                      <Brain className="w-3 h-3 text-muted-foreground" title="Thinking" />
+                      <Brain className="w-3 h-3 text-muted-foreground" aria-label="Thinking" />
                     )}
                     {config.capabilities.fileUpload && (
-                      <FileText className="w-3 h-3 text-muted-foreground" title="File Upload" />
+                      <FileText className="w-3 h-3 text-muted-foreground" aria-label="File Upload" />
                     )}
                     {config.capabilities.imageUpload && (
-                      <Image className="w-3 h-3 text-muted-foreground" title="Image Upload" />
+                      <Image className="w-3 h-3 text-muted-foreground" aria-label="Image Upload" />
                     )}
                     {config.capabilities.imageGeneration && (
-                      <ImagePlus className="w-3 h-3 text-muted-foreground" title="Image Generation" />
+                      <ImagePlus className="w-3 h-3 text-muted-foreground" aria-label="Image Generation" />
                     )}
                   </div>
                   {model.key === currentModelKey && (

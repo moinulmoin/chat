@@ -1,6 +1,5 @@
 "use client";
 
-import { branchChatAction } from "@/actions";
 import { MemoizedMarkdown } from "@/components/memoized-markdown";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,42 +7,19 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from "@/components/ui/collapsible";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
-import { IconButton } from "@/components/ui/icon-button";
 import { Message as dbMessage } from "@/generated/prisma";
-import { GeminiIcon, Grok, Groq, OpenAI } from "@/lib/brand-icons";
-import { getAvailableModels, ModelKey, MODELS } from "@/lib/model-registry";
-import { cn } from "@/lib/utils";
+import { ModelKey, MODELS } from "@/lib/model-registry";
 import { Attachment, Message } from "ai";
 import {
-  ChevronDown,
   ChevronRight,
-  Clipboard,
   ExternalLink,
-  FileText,
-  Pencil,
-  RefreshCcw,
-  Split,
-  Trash
+  FileText
 } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { memo, startTransition, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import { useSWRConfig } from "swr";
+import { memo, useEffect, useMemo, useState } from "react";
 
 interface ChatMessageProps {
   message: Message;
-  messageNumber: number;
   messageIndex: number;
   isSelected?: boolean;
   isEditing?: boolean;
@@ -94,24 +70,10 @@ function ThinkingDots() {
   return <span className="inline-block w-4 text-left">{dots}</span>;
 }
 
-const getProviderIcon = (provider: string) => {
-  switch (provider) {
-    case "google":
-      return <GeminiIcon className="size-4 mr-2" />;
-    case "openai":
-      return <OpenAI className="size-4 mr-2" />;
-    case "groq":
-      return <Groq className="size-4 mr-2" />;
-    case "xai":
-      return <Grok className="size-4 mr-2" />;
-    default:
-      return null;
-  }
-};
+
 
 function ChatMessage({
   message,
-  messageNumber,
   messageIndex,
   isSelected,
   isEditing,
@@ -124,19 +86,6 @@ function ChatMessage({
   exitEditingMode
 }: ChatMessageProps) {
   console.log(message);
-  const router = useRouter();
-  const { mutate } = useSWRConfig();
-  const availableModels = getAvailableModels();
-
-  const modelsByProvider = useMemo(() => {
-    const grouped: Record<string, Array<{ key: ModelKey; config: any }>> = {};
-    availableModels.forEach(({ key, config }) => {
-      const provider = config.provider;
-      if (!grouped[provider]) grouped[provider] = [];
-      grouped[provider].push({ key, config });
-    });
-    return grouped;
-  }, [availableModels]);
 
   // Extract text content once
   const userText = message?.parts?.map((part) => (part.type === "text" ? part.text : "")).join("");
@@ -149,7 +98,7 @@ function ChatMessage({
     setEditedText(userText);
   }, [userText]);
 
-  const userCopyableText = userText;
+
 
   const handleSave = (editedText: string) => {
     if (userText === editedText) {
@@ -238,19 +187,10 @@ function ChatMessage({
         <div className={`flex flex-col gap-2 max-w-2xl group relative items-end ${
           isSelected ? 'ring-2 ring-yellow-400 ring-opacity-50 rounded-lg p-2 bg-yellow-50/50' : ''
         }`}>
-                    {/* Message number badge - only show when selected or in selection mode */}
-          {(isSelected || selectionMode === 'select') && (
-            <div className={`text-xs font-mono px-2 py-1 rounded-md self-end transition-all ${
-              isSelected
-                ? 'bg-yellow-200 text-yellow-800'
-                : 'text-muted-foreground/70 bg-muted/50'
-            }`}>
-              U-{messageNumber}
-              {isSelected && availableActions && (
-                <span className="ml-2 text-xs">
-                  Available: /{availableActions.join(', /')}
-                </span>
-              )}
+          {/* Available actions - only show when selected */}
+          {isSelected && availableActions && (
+            <div className="text-xs font-mono px-2 py-1 rounded-md self-end bg-yellow-200 text-yellow-800">
+              Available: /{availableActions.join(', /')}
             </div>
           )}
           <div className="px-4 py-2 rounded-2xl max-w-fit bg-background border">
@@ -281,77 +221,23 @@ function ChatMessage({
               )}
             </div>
           )}
-          <div className="flex flex-row-reverse items-center gap-x-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity absolute top-0 mt-1 mr-1 right-full">
-            <IconButton
-              variant="ghost"
-              size="sm"
-              icon={<Clipboard className="size-3.5" />}
-              tooltip="Copy"
-              onClick={() => {
-                if (typeof navigator !== "undefined" && navigator.clipboard) {
-                  navigator.clipboard.writeText(userCopyableText ?? "").catch(() => {});
-                  toast.success("Copied to clipboard");
-                }
-              }}
-              className="hover:bg-background"
-            />
-            <IconButton
-              variant="ghost"
-              size="sm"
-              icon={<Pencil className="size-3.5" />}
-              tooltip="Edit"
-              className="hover:bg-background"
-              onClick={() => setIsEditing(true)}
-            />
-            <IconButton
-              variant="ghost"
-              size="sm"
-              icon={<Trash className="size-3.5" />}
-              tooltip="Delete"
-              className="hover:bg-background"
-              onClick={() => handleUserMessageDelete({ messageId: message.id! })}
-            />
-          </div>
+
         </div>
       </div>
     );
   }
 
-  let content = "";
-  message?.parts?.forEach((part) => {
-    if (part.type === "text") {
-      content += part.text;
-    }
-  });
 
-  // Gather plain-text parts once for copy / regenerate buttons
-  const copyableText = useMemo(() => {
-    return (
-      message?.parts
-        ?.filter((p) => p.type === "text")
-        .map((p: any) => p.text)
-        .join("") || ""
-    );
-  }, [message.parts]);
 
   return (
     <div className="flex justify-start flex-col group" data-role="assistant" data-message-index={messageIndex}>
       <div className={`flex flex-col gap-2 max-w-2xl ${
         isSelected ? 'ring-2 ring-yellow-400 ring-opacity-50 rounded-lg p-2 bg-yellow-50/50' : ''
       }`}>
-                {/* Message number badge - only show when selected or in selection mode */}
-        {(isSelected || selectionMode === 'select') && (
-          <div className={`text-xs font-mono px-2 py-1 rounded-md self-start transition-all ${
-            isSelected
-              ? 'bg-yellow-200 text-yellow-800'
-              : 'text-muted-foreground/70 bg-muted/50'
-          }`}>
-            A-{messageNumber}
-            {isSelected && availableActions && (
-              <span className="ml-2 text-xs">
-                Available: /{availableActions.join(', /')}
-              </span>
-            )}
+        {/* Available actions - only show when selected */}
+        {isSelected && availableActions && (
+          <div className="text-xs font-mono px-2 py-1 rounded-md self-start bg-yellow-200 text-yellow-800">
+            Available: /{availableActions.join(', /')}
           </div>
         )}
         {/* Show reasoning/thinking section for assistant messages */}
@@ -425,114 +311,30 @@ function ChatMessage({
         )}
       </div>
 
-      <div
-        className={cn(
-          "flex items-center gap-x-1 w-full grow justify-between text-muted-foreground opacity-0 transition-opacity",
-          status === "submitted" || status === "streaming" ? "" : "group-hover:opacity-100"
-        )}
-      >
-        <div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                variant="ghost"
-                size="sm"
-                icon={
-                  <div className="flex items-center gap-1">
-                    <RefreshCcw className="size-3.5" />
-                    <ChevronDown className="size-2.5" />
-                  </div>
-                }
-                tooltip="Regenerate with model"
-                className="hover:bg-background"
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuItem onClick={() => handleRegenerate({ messageId: message.id! })}>
-                <RefreshCcw />
-                Retry
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {Object.entries(modelsByProvider).map(([provider, models]) => (
-                <DropdownMenuSub key={provider}>
-                  <DropdownMenuSubTrigger>
-                    <div className="flex items-center">
-                      {getProviderIcon(provider)}
-                      {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                    </div>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    {models.map(({ key, config }) => (
-                      <DropdownMenuItem
-                        key={key}
-                        onClick={() => handleRegenerate({ messageId: message.id!, modelKey: key })}
-                      >
-                        {config.displayName}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <IconButton
-            variant="ghost"
-            size="sm"
-            icon={<Clipboard className="size-3.5" />}
-            tooltip="Copy"
-            onClick={() => {
-              if (typeof navigator !== "undefined" && navigator.clipboard) {
-                navigator.clipboard.writeText(copyableText ?? "").catch(() => {});
-                toast.success("Copied to clipboard");
-              }
-            }}
-            className="hover:bg-background"
-          />
-          <IconButton
-            variant="ghost"
-            size="sm"
-            icon={<Split className="size-3.5" />}
-            tooltip="Branching"
-            onClick={() => {
-              startTransition(async () => {
-                try {
-                  const newChatId = await branchChatAction(message.id);
-                  toast.success("Chat branched successfully.");
-                  router.push(`/chat/${newChatId}`);
-                  // Invalidate all chat list pages
-                  await mutate((key) => typeof key === "string" && key.startsWith("/api/chats?"));
-                } catch (error) {
-                  toast.error("Failed to branch chat.");
-                }
-              });
-            }}
-          />
-        </div>
-        {(() => {
-          const metaSource =
-            (Array.isArray(message.annotations) && message.annotations.length > 0
-              ? message.annotations[0]
-              : (message as unknown as dbMessage).metadata) || undefined;
+      {/* Model name badge */}
+      {(() => {
+        const metaSource =
+          (Array.isArray(message.annotations) && message.annotations.length > 0
+            ? message.annotations[0]
+            : (message as unknown as dbMessage).metadata) || undefined;
 
-          if (!metaSource) return null;
+        if (!metaSource) return null;
 
-          const meta = metaSource as {
-            model?: string;
-            tokens?: number | null;
-            durationMs?: number;
-          };
+        const meta = metaSource as {
+          model?: string;
+          tokens?: number | null;
+          durationMs?: number;
+        };
 
-          const modelName = MODELS[meta.model?.split(":")[1] as ModelKey]?.displayName;
-          return (
-            <div className="text-xs text-muted-foreground flex gap-2 ml-auto">
-              {modelName && <span>{modelName}</span>}
-              {meta.tokens != null && meta.durationMs != null && (
-                <span>{Math.round(meta.tokens / (meta.durationMs / 1000))} t/s</span>
-              )}
-            </div>
-          );
-        })()}
-      </div>
+        const modelName = MODELS[meta.model?.split(":")[1] as ModelKey]?.displayName;
+        if (!modelName) return null;
+
+        return (
+          <div className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded-md mt-2 self-start">
+            {modelName}
+          </div>
+        );
+      })()}
     </div>
   );
 }
