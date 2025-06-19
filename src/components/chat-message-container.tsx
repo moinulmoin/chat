@@ -15,7 +15,7 @@ export default function ChatMessageContainer({ status, children }: ChatMessageCo
   }, [status]);
 
   return (
-    <div className="max-w-2xl mx-auto w-full px-4 space-y-4 grow overflow-y-auto">
+    <div className="max-w-2xl mx-auto w-full p-4 space-y-4 grow overflow-y-auto">
       {children}
       {status === "submitted" && (
         <div className="flex items-center gap-2 text-muted-foreground">

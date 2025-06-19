@@ -20,6 +20,7 @@ import { ChatInput } from "./chat-input";
 import { MemoizedChatMessage } from "./chat-message";
 import ChatMessageContainer from "./chat-message-container";
 import { TextSelectionMenu } from "./text-selection-menu";
+import { HistoryCommandPalette } from "./history-command-palette";
 
 const STARTER_QUESTIONS = [
   "Generate creative ideas for a project",
@@ -27,20 +28,50 @@ const STARTER_QUESTIONS = [
   "Help me write a professional email"
 ];
 
+const STARTER_COMMANDS = [
+  { command: "/help", description: "Show all available commands" },
+  { command: "/model", description: "Switch AI models" },
+  { command: "/search", description: "Toggle web search" }
+];
+
 function EmptyState({ onQuestionClick }: { onQuestionClick: (question: string) => void }) {
   return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[60vh] text-center">
-      <h2 className="text-xl font-medium mb-4">How can I help you today?</h2>
-      <div className="space-y-2">
-        {STARTER_QUESTIONS.map((question, index) => (
-          <button
-            key={index}
-            onClick={() => onQuestionClick(question)}
-            className="block text-sm text-muted-foreground hover:text-foreground cursor-pointer"
-          >
-            {question}
-          </button>
-        ))}
+    <div className="flex flex-col items-center justify-center h-full min-h-[60vh] text-center space-y-6">
+      <div>
+        <h2 className="text-xl font-medium mb-2">Welcome to cmdchat</h2>
+        <p className="text-sm text-muted-foreground">Commands inspired AI chat. Start typing or use slash commands.</p>
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-sm font-medium mb-2">Quick Start</h3>
+          <div className="space-y-2">
+            {STARTER_QUESTIONS.map((question, index) => (
+              <button
+                key={index}
+                onClick={() => onQuestionClick(question)}
+                className="block text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium mb-2">Try Commands</h3>
+          <div className="space-y-1">
+            {STARTER_COMMANDS.map((cmd, index) => (
+              <button
+                key={index}
+                onClick={() => onQuestionClick(cmd.command)}
+                className="block text-sm font-mono text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+              >
+                <span className="text-primary">{cmd.command}</span> - {cmd.description}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -56,6 +87,7 @@ function ChatClient({
   const modelKeyFromStore = useStore(currentModelKeyAtom);
   const webSearch = useStore(webSearchAtom);
   const [uploadedAttachment, setUploadedAttachment] = useState<UploadedAttachment | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const finalModelKey = modelKeyFromStore;
   const {
     messages,
@@ -250,13 +282,13 @@ function ChatClient({
   }, []);
 
   return (
-    <div className="flex flex-col flex-1 w-full">
+    <>
       {/* Chat Messages */}
       <ChatMessageContainer status={status}>
         {messages.length === 0 ? (
           <EmptyState onQuestionClick={(question) => setInput(question)} />
         ) : (
-          messages.map((message, i) => (
+          messages.map((message) => (
             <MemoizedChatMessage
               key={message.id}
               message={message}
@@ -282,11 +314,19 @@ function ChatClient({
         onFileUpload={handleFileUpload}
         uploadedAttachment={uploadedAttachment}
         onRemoveAttachment={handleRemoveAttachment}
+        chatId={chatId}
+        setHistoryOpen={setHistoryOpen}
       />
 
       {/* Text Selection Context Menu */}
       <TextSelectionMenu onAddToChat={handleAddToChat} onExplain={handleExplain} />
-    </div>
+
+      {/* History Command Palette */}
+      <HistoryCommandPalette
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+      />
+    </>
   );
 }
 
