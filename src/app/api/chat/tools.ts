@@ -11,7 +11,7 @@ export const webSearch = tool({
   }),
   execute: async ({ query }) => {
     const { results } = await tavilyClient.search(query, {
-      numResults: 2,
+      maxResults: 2,
       includeRawContent: "markdown"
     });
 
