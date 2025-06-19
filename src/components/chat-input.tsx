@@ -59,6 +59,9 @@ interface ChatInputProps {
   // Model selection for regenerate
   regenerateMode?: string | null;
   setRegenerateMode?: (messageId: string | null) => void;
+  // Toggle handlers for AI message sections
+  handleToggleSources?: ({ messageId }: { messageId: string }) => void;
+  handleToggleThinking?: ({ messageId }: { messageId: string }) => void;
 }
 
 export function ChatInput({
@@ -86,7 +89,9 @@ export function ChatInput({
   setEditingMessageId,
   exitEditingMode,
   regenerateMode,
-  setRegenerateMode
+  setRegenerateMode,
+  handleToggleSources,
+  handleToggleThinking
 }: ChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -174,12 +179,10 @@ export function ChatInput({
         selectedMessageIndex,
         messages,
         handleUserMessageDelete,
-        handleUserMessageSave,
         handleRegenerate,
-        setIsInlineEditing,
-        setEditingMessageId,
-        exitEditingMode,
-        setRegenerateMode
+        setRegenerateMode,
+        handleToggleSources,
+        handleToggleThinking
       };
 
       const result = await executeSlashCommand(input, context);
@@ -205,12 +208,10 @@ export function ChatInput({
       selectedMessageIndex,
       messages,
       handleUserMessageDelete,
-      handleUserMessageSave,
       handleRegenerate,
-      setIsInlineEditing,
-      setEditingMessageId,
-      exitEditingMode,
-      setRegenerateMode
+      setRegenerateMode,
+      handleToggleSources,
+      handleToggleThinking
     ]
   );
 
@@ -254,7 +255,7 @@ export function ChatInput({
         setShowCommandSuggestions(false);
 
         // For immediate execution commands in selection mode, execute them
-        if (selectionMode === 'select' && ['edit', 'copy', 'delete', 'branch'].includes(command.command)) {
+        if (selectionMode === 'select' && ['copy', 'delmsg', 'branch', 'togglesources', 'togglethinking'].includes(command.command)) {
           setTimeout(() => {
             executeCommand(`/${command.command}`);
           }, 0);

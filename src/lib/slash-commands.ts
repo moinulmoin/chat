@@ -32,14 +32,12 @@ export interface CommandContext {
   messages?: any[];
   // Message action handlers
   handleUserMessageDelete?: ({ messageId }: { messageId: string }) => void;
-  handleUserMessageSave?: ({ messageId, editedText }: { messageId: string; editedText: string }) => void;
   handleRegenerate?: ({ messageId, modelKey }: { messageId: string; modelKey?: ModelKey }) => void;
-  // Inline editing state
-  setIsInlineEditing?: (editing: boolean) => void;
-  setEditingMessageId?: (messageId: string | null) => void;
-  exitEditingMode?: () => void;
   // Model selection for regenerate
   setRegenerateMode?: (messageId: string | null) => void;
+  // Toggle handlers for AI message sections
+  handleToggleSources?: ({ messageId }: { messageId: string }) => void;
+  handleToggleThinking?: ({ messageId }: { messageId: string }) => void;
 }
 
 export interface SlashCommand {
@@ -106,15 +104,48 @@ export const CORE_COMMANDS: SlashCommand[] = [
     }
   },
   {
-    command: 'clear',
-    aliases: ['cls'],
-    description: 'Clear current input',
+    command: 'delete',
+    aliases: ['del'],
+    description: 'Delete current chat and start new',
     category: 'utility',
-    handler: (args, { setInput, setActiveCommand, setShowCommandSuggestions }) => {
-      setInput('');
-      if (setActiveCommand) setActiveCommand(null);
-      if (setShowCommandSuggestions) setShowCommandSuggestions(false);
-      toast.success("Input cleared");
+    requiresChat: true,
+    handler: async (args, { chatId, router, setInput, setActiveCommand, setShowCommandSuggestions }) => {
+      if (!chatId) {
+        toast.error("No active chat to delete");
+        return;
+      }
+
+      if (!router) {
+        toast.error("Router not available");
+        return;
+      }
+
+      try {
+        // Import the delete action
+        const { deleteChat } = await import("@/actions");
+
+        // Delete the current chat
+        await deleteChat(chatId);
+
+        // Clear input and command state
+        setInput('');
+        if (setActiveCommand) setActiveCommand(null);
+        if (setShowCommandSuggestions) setShowCommandSuggestions(false);
+
+        // Redirect to new chat
+        router.push('/chat');
+
+        toast.success("Chat deleted successfully");
+
+        // Invalidate chat list cache
+        if (typeof window !== 'undefined' && (window as any).__SWR_MUTATE__) {
+          const { mutate } = await import('swr');
+          await mutate((key: any) => typeof key === "string" && key.startsWith("/api/chats?"));
+        }
+      } catch (error) {
+        console.error('Delete chat command error:', error);
+        toast.error("Failed to delete chat");
+      }
     }
   },
   {
@@ -205,53 +236,11 @@ export const CORE_COMMANDS: SlashCommand[] = [
       if (setActiveCommand) setActiveCommand(null);
       if (setShowCommandSuggestions) setShowCommandSuggestions(false);
 
-      toast.success("Selection mode: Use ↑↓ to navigate • Type /e for /edit • ESC to exit");
+      toast.success("Selection mode: Use ↑↓ to navigate • Type /c for /copy • ESC to exit");
     }
   },
 
   // Context-aware message actions (only available in selection mode)
-  {
-    command: 'edit',
-    description: 'Edit selected user message',
-    category: 'utility',
-    handler: (args, context) => {
-      const { messages, setSelectionMode, setIsInlineEditing, setEditingMessageId, setInput } = context;
-      const selectedMessageIndex = (context as any).selectedMessageIndex;
-
-      if (!messages || selectedMessageIndex === undefined || selectedMessageIndex < 0 || selectedMessageIndex >= messages.length) {
-        toast.error("No message selected to edit");
-        return;
-      }
-
-      const selectedMessage = messages[selectedMessageIndex];
-
-      // Only allow editing user messages
-      if (selectedMessage.role !== 'user') {
-        toast.error("Can only edit user messages");
-        return;
-      }
-
-      if (!selectedMessage.id) {
-        toast.error("Message ID not found");
-        return;
-      }
-
-      if (!setIsInlineEditing || !setEditingMessageId) {
-        toast.error("Edit functions not available");
-        return;
-      }
-
-      // Enter inline editing mode
-      setIsInlineEditing(true);
-      setEditingMessageId(selectedMessage.id);
-
-      // Clear input and exit selection mode
-      setInput('');
-      if (setSelectionMode) setSelectionMode(null);
-
-      toast.success(`Editing user message...`);
-    }
-  },
   {
     command: 'copy',
     description: 'Copy selected message',
@@ -305,7 +294,8 @@ export const CORE_COMMANDS: SlashCommand[] = [
     }
   },
   {
-    command: 'delete',
+    command: 'delmsg',
+    aliases: ['dm'],
     description: 'Delete selected user message',
     category: 'utility',
     handler: (args, context) => {
@@ -378,7 +368,6 @@ export const CORE_COMMANDS: SlashCommand[] = [
           setRegenerateMode(selectedMessage.id); // Store which message to regenerate
           setShowModelSelection(true);
           setInput('/regenerate ');
-          toast.success(`Select model to regenerate AI message`);
           return;
         }
 
@@ -388,7 +377,6 @@ export const CORE_COMMANDS: SlashCommand[] = [
           return;
         }
 
-        toast.success(`Regenerating AI message...`);
         handleRegenerate({ messageId: selectedMessage.id });
         setInput('');
         if (setSelectionMode) setSelectionMode(null);
@@ -402,7 +390,6 @@ export const CORE_COMMANDS: SlashCommand[] = [
       }
 
       const modelKey = args[0] as ModelKey;
-      toast.success(`Regenerating AI message with ${modelKey}...`);
 
       // Execute regeneration with specified model
       handleRegenerate({ messageId: selectedMessage.id, modelKey });
@@ -444,14 +431,12 @@ export const CORE_COMMANDS: SlashCommand[] = [
       }
 
       try {
-        toast.success(`Branching from AI message...`);
-
         // Import the branch action dynamically
         const { branchChatAction } = await import("@/actions");
 
         // Execute branching
         const newChatId = await branchChatAction(selectedMessage.id);
-        toast.success("Chat branched successfully.");
+        toast.success("Chat branched successfully");
 
         // Navigate to new chat
         router.push(`/chat/${newChatId}`);
@@ -469,6 +454,86 @@ export const CORE_COMMANDS: SlashCommand[] = [
         console.error('Branch command error:', error);
         toast.error("Failed to branch chat");
       }
+    }
+  },
+  {
+    command: 'togglesources',
+    aliases: ['sources'],
+    description: 'Toggle sources section',
+    category: 'utility',
+    handler: (args, context) => {
+      const { messages, handleToggleSources, setSelectionMode, setInput } = context;
+      const selectedMessageIndex = (context as any).selectedMessageIndex;
+
+      if (!messages || selectedMessageIndex === undefined || selectedMessageIndex < 0 || selectedMessageIndex >= messages.length) {
+        toast.error("No message selected");
+        return;
+      }
+
+      const selectedMessage = messages[selectedMessageIndex];
+
+      // Only allow for AI messages
+      if (selectedMessage.role !== 'assistant') {
+        toast.error("Sources only available for AI messages");
+        return;
+      }
+
+      if (!selectedMessage.id) {
+        toast.error("Message ID not found");
+        return;
+      }
+
+      if (!handleToggleSources) {
+        toast.error("Toggle sources function not available");
+        return;
+      }
+
+      // Execute toggle
+      handleToggleSources({ messageId: selectedMessage.id });
+
+      // Clear input and exit selection mode
+      setInput('');
+      if (setSelectionMode) setSelectionMode(null);
+    }
+  },
+  {
+    command: 'togglethinking',
+    aliases: ['thinking'],
+    description: 'Toggle thinking section',
+    category: 'utility',
+    handler: (args, context) => {
+      const { messages, handleToggleThinking, setSelectionMode, setInput } = context;
+      const selectedMessageIndex = (context as any).selectedMessageIndex;
+
+      if (!messages || selectedMessageIndex === undefined || selectedMessageIndex < 0 || selectedMessageIndex >= messages.length) {
+        toast.error("No message selected");
+        return;
+      }
+
+      const selectedMessage = messages[selectedMessageIndex];
+
+      // Only allow for AI messages
+      if (selectedMessage.role !== 'assistant') {
+        toast.error("Thinking only available for AI messages");
+        return;
+      }
+
+      if (!selectedMessage.id) {
+        toast.error("Message ID not found");
+        return;
+      }
+
+      if (!handleToggleThinking) {
+        toast.error("Toggle thinking function not available");
+        return;
+      }
+
+      // Execute toggle
+      handleToggleThinking({ messageId: selectedMessage.id });
+
+      // Clear input and exit selection mode
+      setInput('');
+      if (setSelectionMode) setSelectionMode(null);
     }
   }
 ];
@@ -582,12 +647,31 @@ export function getCommandSuggestions(
 
   // Filter commands based on selection mode and selected message type
   if (selectionMode === 'select' && selectedMessage) {
-    const messageActionCommands = ['edit', 'copy', 'delete', 'regenerate', 'branch'];
+    const messageActionCommands = ['copy', 'delmsg', 'regenerate', 'branch', 'togglesources', 'togglethinking'];
 
     // Get available actions for this message type
     const availableActions = selectedMessage.role === 'user'
-      ? ['edit', 'copy', 'delete']
-      : ['copy', 'regenerate', 'branch'];
+      ? ['copy', 'delmsg']
+      : (() => {
+          const baseActions = ['copy', 'regenerate', 'branch'];
+
+          // Check if message has sources (web search results)
+          const hasSources = selectedMessage.parts?.some((part: any) =>
+            part.type === "tool-invocation" &&
+            part.toolInvocation.toolName === "webSearch" &&
+            part.toolInvocation.state === "result" &&
+            Array.isArray(part.toolInvocation.result) &&
+            part.toolInvocation.result.length > 0
+          );
+
+          // Check if message has thinking/reasoning
+          const hasThinking = selectedMessage.parts?.some((part: any) => part.type === "reasoning");
+
+          if (hasSources) baseActions.push('togglesources');
+          if (hasThinking) baseActions.push('togglethinking');
+
+          return baseActions;
+        })();
 
     // Only show message action commands that are valid for the selected message type
     commands = commands.filter(cmd => {
@@ -622,7 +706,7 @@ export function getCommandSuggestions(
     });
   } else {
     // When not in selection mode, hide individual message action commands
-    const messageActionCommands = ['edit', 'copy', 'delete', 'regenerate', 'branch'];
+    const messageActionCommands = ['copy', 'delmsg', 'regenerate', 'branch', 'togglesources', 'togglethinking'];
     commands = commands.filter(cmd => !messageActionCommands.includes(cmd.command));
   }
 
@@ -670,8 +754,27 @@ export async function executeSlashCommand(
     if (selectedMessage) {
       // Get available actions for this message type
       const availableActions = selectedMessage.role === 'user'
-        ? ['edit', 'copy', 'delete']
-        : ['copy', 'regenerate', 'branch'];
+        ? ['copy', 'delmsg']
+        : (() => {
+            const baseActions = ['copy', 'regenerate', 'branch'];
+
+            // Check if message has sources (web search results)
+            const hasSources = selectedMessage.parts?.some((part: any) =>
+              part.type === "tool-invocation" &&
+              part.toolInvocation.toolName === "webSearch" &&
+              part.toolInvocation.state === "result" &&
+              Array.isArray(part.toolInvocation.result) &&
+              part.toolInvocation.result.length > 0
+            );
+
+            // Check if message has thinking/reasoning
+            const hasThinking = selectedMessage.parts?.some((part: any) => part.type === "reasoning");
+
+            if (hasSources) baseActions.push('togglesources');
+            if (hasThinking) baseActions.push('togglethinking');
+
+            return baseActions;
+          })();
 
       // Find available commands that start with the typed command
       const matchingCommands = availableActions

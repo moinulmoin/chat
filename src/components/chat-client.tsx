@@ -60,6 +60,9 @@ function ChatClient({
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [regenerateMode, setRegenerateMode] = useState<string | null>(null); // messageId to regenerate
 
+  // AI message section toggle state (messageId -> section -> isOpen)
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, { sources?: boolean; thinking?: boolean }>>({});
+
   const finalModelKey = modelKeyFromStore;
   const {
     messages,
@@ -258,6 +261,26 @@ function ChatClient({
     setEditingMessageId(null);
   }, []);
 
+  const handleToggleSources = useCallback(({ messageId }: { messageId: string }) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [messageId]: {
+        ...prev[messageId],
+        sources: !prev[messageId]?.sources
+      }
+    }));
+  }, []);
+
+  const handleToggleThinking = useCallback(({ messageId }: { messageId: string }) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [messageId]: {
+        ...prev[messageId],
+        thinking: !prev[messageId]?.thinking
+      }
+    }));
+  }, []);
+
   return (
     <>
       {/* Chat Messages */}
@@ -271,26 +294,48 @@ function ChatClient({
 
             // Get available actions for this message type
             const availableActions = message.role === 'user'
-              ? ['edit', 'copy', 'delete']
-              : ['copy', 'regenerate', 'branch'];
+              ? ['copy', 'delmsg']
+              : (() => {
+                  const baseActions = ['copy', 'regenerate', 'branch'];
 
-            return (
-              <MemoizedChatMessage
-                key={message.id}
-                message={message}
-                messageIndex={index}
-                isSelected={isSelected}
-                selectionMode={selectionMode}
-                availableActions={availableActions}
-                isEditing={editingMessageId === message.id}
-                status={status}
-                handleRegenerate={handleRegenerate}
-                selectedModelKey={finalModelKey}
-                handleUserMessageDelete={handleUserMessageDelete}
-                handleUserMessageSave={handleUserMessageSave}
-                exitEditingMode={exitEditingMode}
-              />
-            );
+                  // Check if message has sources (web search results)
+                  const hasSources = message.parts?.some((part: any) =>
+                    part.type === "tool-invocation" &&
+                    part.toolInvocation.toolName === "webSearch" &&
+                    part.toolInvocation.state === "result" &&
+                    Array.isArray(part.toolInvocation.result) &&
+                    part.toolInvocation.result.length > 0
+                  );
+
+                  // Check if message has thinking/reasoning
+                  const hasThinking = message.parts?.some((part: any) => part.type === "reasoning");
+
+                  if (hasSources) baseActions.push('togglesources');
+                  if (hasThinking) baseActions.push('togglethinking');
+
+                  return baseActions;
+                })();
+
+                          return (
+                <MemoizedChatMessage
+                  key={message.id}
+                  message={message}
+                  messageIndex={index}
+                  isSelected={isSelected}
+                  selectionMode={selectionMode}
+                  availableActions={availableActions}
+                  isEditing={editingMessageId === message.id}
+                  status={status}
+                  handleRegenerate={handleRegenerate}
+                  selectedModelKey={finalModelKey}
+                  handleUserMessageDelete={handleUserMessageDelete}
+                  handleUserMessageSave={handleUserMessageSave}
+                  exitEditingMode={exitEditingMode}
+                  collapsedSections={collapsedSections[message.id!] || {}}
+                  handleToggleSources={handleToggleSources}
+                  handleToggleThinking={handleToggleThinking}
+                />
+              );
           })
         )}
       </ChatMessageContainer>
@@ -322,6 +367,8 @@ function ChatClient({
         exitEditingMode={exitEditingMode}
         regenerateMode={regenerateMode}
         setRegenerateMode={setRegenerateMode}
+        handleToggleSources={handleToggleSources}
+        handleToggleThinking={handleToggleThinking}
       />
 
       {/* Text Selection Context Menu */}

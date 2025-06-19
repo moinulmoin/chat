@@ -138,8 +138,6 @@ export const MODELS = {
     description: "The latest Llama model, served by Groq",
     capabilities: {
       ...DEFAULT_CAPABILITIES,
-      fileUpload: true,
-      imageUpload: true,
     }
   },
   "qwen3-32b": {

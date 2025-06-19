@@ -37,6 +37,9 @@ interface ChatMessageProps {
   }) => void;
   handleUserMessageDelete: ({ messageId }: { messageId: string }) => void;
   exitEditingMode?: () => void;
+  collapsedSections?: { sources?: boolean; thinking?: boolean };
+  handleToggleSources?: ({ messageId }: { messageId: string }) => void;
+  handleToggleThinking?: ({ messageId }: { messageId: string }) => void;
 }
 
 function WebSearchLoading() {
@@ -83,7 +86,10 @@ function ChatMessage({
   handleRegenerate,
   handleUserMessageSave,
   handleUserMessageDelete,
-  exitEditingMode
+  exitEditingMode,
+  collapsedSections,
+  handleToggleSources,
+  handleToggleThinking
 }: ChatMessageProps) {
   console.log(message);
 
@@ -249,7 +255,14 @@ function ChatMessage({
           const thinkingLabel = isThinking ? "Thinking" : "Thoughts";
 
           return (
-            <Collapsible>
+            <Collapsible
+              open={!collapsedSections?.thinking}
+              onOpenChange={(open) => {
+                if (handleToggleThinking && message.id) {
+                  handleToggleThinking({ messageId: message.id });
+                }
+              }}
+            >
               <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group/trigger">
                 <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]/trigger:rotate-90" />
                 <div className="flex items-center gap-1">
@@ -271,7 +284,14 @@ function ChatMessage({
 
                         {/* Web Search Sources */}
         {webSearchResults.length > 0 && (
-          <Collapsible>
+          <Collapsible
+            open={!collapsedSections?.sources}
+            onOpenChange={(open) => {
+              if (handleToggleSources && message.id) {
+                handleToggleSources({ messageId: message.id });
+              }
+            }}
+          >
             <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group/trigger">
               <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]/trigger:rotate-90" />
               <span className="font-medium">Sources ({webSearchResults.length})</span>
