@@ -1,9 +1,13 @@
 "use client";
 
-import { deleteTrailingMessagesAction, updateMessageAction } from "@/actions";
+import {
+  deleteTrailingMessagesAction,
+  updateMessageAction
+} from "@/actions";
 import { useAutoResume } from "@/hooks/use-auto-resume";
+import { swrKeys } from "@/lib/keys";
 import { ModelKey } from "@/lib/model-registry";
-import { chatStore, setSelectedModel } from "@/lib/stores/chat";
+import { currentModelKeyAtom, setModelKey, webSearchAtom } from "@/lib/stores/chat";
 import { UploadedAttachment } from "@/lib/types";
 import { useChat } from "@ai-sdk/react";
 import { useStore } from "@nanostores/react";
@@ -11,6 +15,7 @@ import { upload } from "@vercel/blob/client";
 import { Message, UIMessage } from "ai";
 import { nanoid } from "nanoid";
 import { startTransition, useCallback, useState } from "react";
+import { mutate } from "swr";
 import { ChatInput } from "./chat-input";
 import { MemoizedChatMessage } from "./chat-message";
 import ChatMessageContainer from "./chat-message-container";
@@ -24,7 +29,7 @@ const STARTER_QUESTIONS = [
 
 function EmptyState({ onQuestionClick }: { onQuestionClick: (question: string) => void }) {
   return (
-    <div className="flex flex-col items-center justify-center flex-1 px-4 py-8">
+    <div className="flex flex-col items-center justify-center h-full min-h-[60vh] text-center">
       <h2 className="text-xl font-medium mb-4">How can I help you today?</h2>
       <div className="space-y-2">
         {STARTER_QUESTIONS.map((question, index) => (
@@ -41,9 +46,17 @@ function EmptyState({ onQuestionClick }: { onQuestionClick: (question: string) =
   );
 }
 
-function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[]; chatId: string }) {
-  const { selectedModelKey, webSearch } = useStore(chatStore);
+function ChatClient({
+  initialMessages,
+  chatId
+}: {
+  initialMessages: UIMessage[];
+  chatId: string;
+}) {
+  const modelKeyFromStore = useStore(currentModelKeyAtom);
+  const webSearch = useStore(webSearchAtom);
   const [uploadedAttachment, setUploadedAttachment] = useState<UploadedAttachment | null>(null);
+  const finalModelKey = modelKeyFromStore;
   const {
     messages,
     handleSubmit: originalHandleSubmit,
@@ -65,9 +78,14 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
       return {
         lastMessage,
         id: body.id,
-        modelKey: selectedModelKey,
-        webSearch
+        webSearch,
+        modelKey: finalModelKey
       };
+    },
+    onFinish: () => {
+      if (chatId && messages.length === 2) {
+        mutate(swrKeys.messageCount(chatId));
+      }
     }
   });
 
@@ -161,7 +179,7 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
   const handleRegenerate = useCallback(
     ({ messageId, modelKey }: { messageId: string; modelKey?: ModelKey }) => {
       if (modelKey) {
-        setSelectedModel(modelKey);
+        setModelKey(modelKey);
       }
 
       startTransition(async () => {
@@ -172,13 +190,9 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
         prevMessages.filter((m: Message) => m.id !== messageId)
       );
 
-      reload({
-        body: {
-          modelKey: selectedModelKey
-        }
-      });
+      reload();
     },
-    [selectedModelKey, reload]
+    []
   );
 
   const handleUserMessageSave = useCallback(
@@ -218,18 +232,15 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
     });
   }, []);
 
-  const handleAddToChat = useCallback(
-    (selectedText: string) => {
-      setInput((prevInput) => {
-        const trimmedInput = prevInput.trim();
-        if (trimmedInput) {
-          return `${trimmedInput}\n\n${selectedText}`;
-        }
-        return selectedText;
-      });
-    },
-    [setInput]
-  );
+  const handleAddToChat = useCallback((selectedText: string) => {
+    setInput((prevInput) => {
+      const trimmedInput = prevInput.trim();
+      if (trimmedInput) {
+        return `${trimmedInput}\n\n${selectedText}`;
+      }
+      return selectedText;
+    });
+  }, []);
 
   const handleExplain = useCallback((selectedText: string) => {
     append({
@@ -251,7 +262,7 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
               message={message}
               status={status}
               handleRegenerate={handleRegenerate}
-              selectedModelKey={selectedModelKey}
+              selectedModelKey={finalModelKey}
               handleUserMessageDelete={handleUserMessageDelete}
               handleUserMessageSave={handleUserMessageSave}
             />
@@ -261,7 +272,7 @@ function ChatClient({ initialMessages, chatId }: { initialMessages: UIMessage[];
 
       {/* Input Footer */}
       <ChatInput
-        modelKey={selectedModelKey}
+        modelKey={finalModelKey}
         onSubmit={handleSubmit}
         status={status}
         stop={stop}

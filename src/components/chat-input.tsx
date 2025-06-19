@@ -5,7 +5,7 @@ import { IconButton } from "@/components/ui/icon-button";
 import { Textarea } from "@/components/ui/textarea";
 import { isCapabilitySupported } from "@/lib/chat-settings";
 import { ModelKey } from "@/lib/model-registry";
-import { setSelectedModel, setWebSearch } from "@/lib/stores/chat";
+import { setModelKey, toggleWebSearch } from "@/lib/stores/chat";
 import { UploadedAttachment } from "@/lib/types";
 import { ChatStatus } from "@/types";
 import { ArrowUp, FileText, Globe, Loader2, Paperclip, Square, X } from "lucide-react";
@@ -36,7 +36,6 @@ export function ChatInput({
   input,
   setInput,
   onSubmit,
-  placeholder = "How can t0Chat help?",
   status,
   stop,
   webSearch,
@@ -51,7 +50,7 @@ export function ChatInput({
   const isStreaming = status === "streaming" || status !== "ready";
 
   const handleModelChange = (newModelKey: ModelKey) => {
-    setSelectedModel(newModelKey);
+    setModelKey(newModelKey);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,7 +96,7 @@ export function ChatInput({
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={placeholder}
+              placeholder="What's on your mind?"
               className="w-full resize-none border-0 p-2 shadow-none bg-transparent text-base focus-visible:ring-0 focus-visible:ring-offset-0 h-auto"
               rows={1}
               onKeyDown={(e) => {
@@ -193,14 +192,14 @@ export function ChatInput({
                     className="sm:hidden rounded-full"
                     icon={<Globe size={14} />}
                     tooltip="Search"
-                    onClick={() => setWebSearch(!webSearch)}
+                    onClick={() => toggleWebSearch()}
                   />
                   {/* Large screen: Regular button with text */}
                   <Button
                     variant={webSearch ? "default" : "outline"}
                     size="sm"
                     className="hidden sm:flex rounded-2xl"
-                    onClick={() => setWebSearch(!webSearch)}
+                    onClick={() => toggleWebSearch()}
                   >
                     <Globe size={14} />
                     Search
@@ -219,7 +218,9 @@ export function ChatInput({
                 }
                 tooltip="Send message"
                 onClick={isSubmitted ? stop : onSubmit}
-                variant={input.trim() === "" && !isStreaming && !isSubmitted ? "outline" : "default"}
+                variant={
+                  input.trim() === "" && !isStreaming && !isSubmitted ? "outline" : "default"
+                }
               />
             </div>
           </div>

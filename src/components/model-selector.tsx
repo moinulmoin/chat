@@ -17,7 +17,7 @@ import {
 import { GeminiIcon, Grok, Groq, OpenAI } from "@/lib/brand-icons";
 import { ModelKey, MODELS } from "@/lib/model-registry";
 import { modelsProvider } from "@/lib/utils";
-import { Brain, Check, ChevronDown, FileText, Hammer, Image, ImagePlus } from "lucide-react";
+import { Brain, Check, ChevronDown, FileText, Image, ImagePlus } from "lucide-react";
 import * as React from "react";
 
 interface ModelSelectorProps {

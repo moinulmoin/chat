@@ -1,11 +1,22 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { deleteChat as deleteChatMutation, updateChatTitle as updateChatTitleMutation } from "@/server/mutations/chats";
 import { updateMessage } from "@/server/mutations/messages";
 import { getMessageById } from "@/server/queries/messages";
 import { TextPart } from "ai";
 import { randomBytes } from "crypto";
+import { revalidatePath } from "next/cache";
 
+export async function deleteChat(id: string) {
+    await deleteChatMutation(id);
+    revalidatePath("/");
+}
+
+export async function updateChatTitle(id: string, title: string) {
+    await updateChatTitleMutation(id, title);
+    revalidatePath("/");
+}
 
 export async function deleteTrailingMessagesAction(messageId: string) {
   const message = await getMessageById(messageId);

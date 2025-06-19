@@ -19,15 +19,15 @@ import {
   appendResponseMessages,
   createDataStream,
   smoothStream,
-  streamText,
-  UIMessage
+  streamText
 } from "ai";
 import { differenceInSeconds } from "date-fns";
-import { after } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import {
   createResumableStreamContext,
   type ResumableStreamContext
 } from "resumable-stream/ioredis";
+import { z } from "zod";
 import { tools } from "./tools";
 
 export const maxDuration = 60;
@@ -53,6 +53,13 @@ function getStreamContext() {
 
   return globalStreamContext;
 }
+
+const chatRequestSchema = z.object({
+  lastMessage: z.any(),
+  id: z.string(),
+  webSearch: z.boolean().optional(),
+  modelKey: z.string().optional()
+});
 
 export async function GET(request: Request) {
   const streamContext = getStreamContext();
@@ -134,16 +141,20 @@ export async function GET(request: Request) {
   return new Response(stream, { status: 200 });
 }
 
-export async function POST(request: Request) {
-  try {
-    const payload = (await request.json()) as {
-      id: string;
-      lastMessage: UIMessage;
-      modelKey: ModelKey;
-      webSearch: boolean;
-    };
+export async function POST(req: NextRequest) {
+  const cookieStore = req.cookies;
+  const modelKeyFromCookie = cookieStore.get("modelKey")?.value as ModelKey;
 
-    const { id: chatId, lastMessage, modelKey, webSearch } = payload;
+  try {
+    const parsed = chatRequestSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const { lastMessage, id:chatId, webSearch, modelKey: modelKeyFromRequest } = parsed.data;
+    const modelKey = modelKeyFromCookie || modelKeyFromRequest;
+
+    console.log({ modelKeyFromCookie, modelKeyFromRequest, modelKey });
 
     if (!chatId) {
       return new Response("chatId is required", { status: 400 });

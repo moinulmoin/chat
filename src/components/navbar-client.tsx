@@ -53,12 +53,14 @@ export function NavbarClient({ user }: { user: { name?: string | null; email?: s
     useHotkeys('ctrl+s, meta+s', handleShare, {
         preventDefault: true,
         enabled: shouldShowShareButton && !isShareLoading,
-        description: 'Share current chat'
+        description: 'Share current chat',
+        enableOnFormTags: true,
     });
 
     useHotkeys('ctrl+k, meta+k', handleOpenHistory, {
         preventDefault: true,
-        description: 'Open chat history'
+        description: 'Open chat history',
+        enableOnFormTags: true,
     });
 
     return (
