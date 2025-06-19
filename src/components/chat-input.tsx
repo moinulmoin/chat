@@ -238,13 +238,30 @@ export function ChatInput({
         setShowCommandSuggestions(false);
         setSelectedModelIndex(0);
         setInput("/model");
+      } else if (command.command === "regenerate") {
+        // Show model selection for regenerate if no args
+        setActiveCommand("regenerate");
+        setShowCommandSuggestions(false);
+        setInput(`/${command.command} `);
+
+        // Trigger the regenerate command immediately to show model selection
+        setTimeout(() => {
+          executeCommand(`/${command.command}`);
+        }, 0);
       } else {
         setActiveCommand(command.command);
         setInput(`/${command.command} `);
         setShowCommandSuggestions(false);
+
+        // For immediate execution commands in selection mode, execute them
+        if (selectionMode === 'select' && ['edit', 'copy', 'delete', 'branch'].includes(command.command)) {
+          setTimeout(() => {
+            executeCommand(`/${command.command}`);
+          }, 0);
+        }
       }
     },
-    [setInput]
+    [setInput, selectionMode, executeCommand]
   );
 
   // Handle model selection
@@ -326,57 +343,7 @@ export function ChatInput({
                 }`}
                 rows={1}
                               onKeyDown={(e) => {
-                                // Handle message selection navigation
-                if (selectionMode === 'select') {
-                  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    if (!messages || messages.length === 0) return;
-
-                    const direction = e.key === 'ArrowUp' ? -1 : 1;
-                    const currentIndex = selectedMessageIndex ?? messages.length - 1;
-
-                    // Wrap around navigation: top wraps to bottom, bottom wraps to top
-                    let newIndex = currentIndex + direction;
-                    if (newIndex < 0) {
-                      newIndex = messages.length - 1; // Wrap to last message
-                    } else if (newIndex >= messages.length) {
-                      newIndex = 0; // Wrap to first message
-                    }
-
-                    if (setSelectedMessageIndex) {
-                      setSelectedMessageIndex(newIndex);
-
-                      // Scroll selected message into view
-                      setTimeout(() => {
-                        const messageElements = document.querySelectorAll('[data-message-index]');
-                        const selectedElement = Array.from(messageElements).find(
-                          el => el.getAttribute('data-message-index') === newIndex.toString()
-                        );
-                        if (selectedElement) {
-                          selectedElement.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'center'
-                          });
-                        }
-                      }, 50);
-                    }
-                    return;
-                  }
-                  if (e.key === 'Escape') {
-                    e.preventDefault();
-                    if (setSelectionMode) setSelectionMode(null);
-                    toast.success("Exited selection mode");
-                    return;
-                  }
-                  // Allow typing commands while in selection mode
-                  if (e.key === 'Enter' && !e.shiftKey && input.startsWith('/')) {
-                    e.preventDefault();
-                    executeCommand(input);
-                    return;
-                  }
-                }
-
-                // Handle model selection navigation
+                                // Handle model selection navigation (HIGHEST PRIORITY)
                 if (showModelSelection) {
                     const availableModels = getAvailableModels();
                     if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) {
@@ -403,7 +370,18 @@ export function ChatInput({
 
                   // Handle command suggestions navigation
                   if (showCommandSuggestions) {
-                    if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) {
+                    if (e.key === "Tab") {
+                      e.preventDefault();
+                      const selectedCmd = commandSuggestions[selectedCommandIndex];
+                      if (selectedCmd) {
+                        // Tab auto-completes the command
+                        setInput(`/${selectedCmd.command} `);
+                        setShowCommandSuggestions(false);
+                        setActiveCommand(selectedCmd.command);
+                      }
+                      return;
+                    }
+                    if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       const selectedCmd = commandSuggestions[selectedCommandIndex];
                       selectCommand(selectedCmd);
@@ -420,6 +398,56 @@ export function ChatInput({
                     if (e.key === "Escape") {
                       e.preventDefault();
                       setShowCommandSuggestions(false);
+                      return;
+                    }
+                  }
+
+                  // Handle message selection navigation (LOWEST PRIORITY)
+                  if (selectionMode === 'select') {
+                    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      if (!messages || messages.length === 0) return;
+
+                      const direction = e.key === 'ArrowUp' ? -1 : 1;
+                      const currentIndex = selectedMessageIndex ?? messages.length - 1;
+
+                      // Wrap around navigation: top wraps to bottom, bottom wraps to top
+                      let newIndex = currentIndex + direction;
+                      if (newIndex < 0) {
+                        newIndex = messages.length - 1; // Wrap to last message
+                      } else if (newIndex >= messages.length) {
+                        newIndex = 0; // Wrap to first message
+                      }
+
+                      if (setSelectedMessageIndex) {
+                        setSelectedMessageIndex(newIndex);
+
+                        // Scroll selected message into view
+                        setTimeout(() => {
+                          const messageElements = document.querySelectorAll('[data-message-index]');
+                          const selectedElement = Array.from(messageElements).find(
+                            el => el.getAttribute('data-message-index') === newIndex.toString()
+                          );
+                          if (selectedElement) {
+                            selectedElement.scrollIntoView({
+                              behavior: 'smooth',
+                              block: 'center'
+                            });
+                          }
+                        }, 50);
+                      }
+                      return;
+                    }
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      if (setSelectionMode) setSelectionMode(null);
+                      toast.success("Exited selection mode");
+                      return;
+                    }
+                    // Allow typing commands while in selection mode
+                    if (e.key === 'Enter' && !e.shiftKey && input.startsWith('/')) {
+                      e.preventDefault();
+                      executeCommand(input);
                       return;
                     }
                   }

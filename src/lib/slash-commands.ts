@@ -205,7 +205,7 @@ export const CORE_COMMANDS: SlashCommand[] = [
       if (setActiveCommand) setActiveCommand(null);
       if (setShowCommandSuggestions) setShowCommandSuggestions(false);
 
-      toast.success("Selection mode: Use ↑↓ to navigate, available commands will be shown");
+      toast.success("Selection mode: Use ↑↓ to navigate • Type /e for /edit • ESC to exit");
     }
   },
 
@@ -215,7 +215,7 @@ export const CORE_COMMANDS: SlashCommand[] = [
     description: 'Edit selected user message',
     category: 'utility',
     handler: (args, context) => {
-      const { messages, setSelectionMode, setIsInlineEditing, setEditingMessageId } = context;
+      const { messages, setSelectionMode, setIsInlineEditing, setEditingMessageId, setInput } = context;
       const selectedMessageIndex = (context as any).selectedMessageIndex;
 
       if (!messages || selectedMessageIndex === undefined || selectedMessageIndex < 0 || selectedMessageIndex >= messages.length) {
@@ -249,7 +249,8 @@ export const CORE_COMMANDS: SlashCommand[] = [
       setIsInlineEditing(true);
       setEditingMessageId(selectedMessage.id);
 
-      // Exit selection mode
+      // Clear input and exit selection mode
+      setInput('');
       if (setSelectionMode) setSelectionMode(null);
 
       toast.success(`Editing U-${messageNum}...`);
@@ -260,7 +261,7 @@ export const CORE_COMMANDS: SlashCommand[] = [
     description: 'Copy selected message',
     category: 'utility',
     handler: (args, context) => {
-      const { messages, setSelectionMode } = context;
+      const { messages, setSelectionMode, setInput } = context;
 
       // Get selected message index from context (passed via custom property)
       const selectedMessageIndex = (context as any).selectedMessageIndex;
@@ -300,7 +301,8 @@ export const CORE_COMMANDS: SlashCommand[] = [
 
           toast.success(`${messageType}-${messageNum} copied to clipboard`);
 
-          // Exit selection mode after successful copy
+          // Clear input and exit selection mode after successful copy
+          setInput('');
           if (setSelectionMode) setSelectionMode(null);
         }).catch(() => {
           toast.error("Failed to copy to clipboard");
@@ -315,7 +317,7 @@ export const CORE_COMMANDS: SlashCommand[] = [
     description: 'Delete selected user message',
     category: 'utility',
     handler: (args, context) => {
-      const { messages, setSelectionMode, handleUserMessageDelete } = context;
+      const { messages, setSelectionMode, handleUserMessageDelete, setInput } = context;
       const selectedMessageIndex = (context as any).selectedMessageIndex;
 
       if (!messages || selectedMessageIndex === undefined || selectedMessageIndex < 0 || selectedMessageIndex >= messages.length) {
@@ -351,7 +353,8 @@ export const CORE_COMMANDS: SlashCommand[] = [
       // Execute deletion
       handleUserMessageDelete({ messageId: selectedMessage.id });
 
-      // Exit selection mode after deletion
+      // Clear input and exit selection mode after deletion
+      setInput('');
       if (setSelectionMode) setSelectionMode(null);
 
       toast.success(`U-${messageNum} deleted successfully`);
@@ -406,6 +409,7 @@ export const CORE_COMMANDS: SlashCommand[] = [
 
         toast.success(`Regenerating A-${messageNum}...`);
         handleRegenerate({ messageId: selectedMessage.id });
+        setInput('');
         if (setSelectionMode) setSelectionMode(null);
         return;
       }
@@ -422,7 +426,8 @@ export const CORE_COMMANDS: SlashCommand[] = [
       // Execute regeneration with specified model
       handleRegenerate({ messageId: selectedMessage.id, modelKey });
 
-      // Exit selection mode after regeneration
+      // Clear input and exit selection mode after regeneration
+      setInput('');
       if (setSelectionMode) setSelectionMode(null);
     }
   },
@@ -431,7 +436,7 @@ export const CORE_COMMANDS: SlashCommand[] = [
     description: 'Branch from selected AI message',
     category: 'utility',
     handler: async (args, context) => {
-      const { messages, setSelectionMode, router } = context;
+      const { messages, setSelectionMode, router, setInput } = context;
       const selectedMessageIndex = (context as any).selectedMessageIndex;
 
       if (!messages || selectedMessageIndex === undefined || selectedMessageIndex < 0 || selectedMessageIndex >= messages.length) {
@@ -474,7 +479,8 @@ export const CORE_COMMANDS: SlashCommand[] = [
         // Navigate to new chat
         router.push(`/chat/${newChatId}`);
 
-        // Exit selection mode
+        // Clear input and exit selection mode
+        setInput('');
         if (setSelectionMode) setSelectionMode(null);
 
         // Invalidate chat list cache
@@ -528,6 +534,7 @@ export const ADVANCED_COMMANDS: SlashCommand[] = [
       if (modelKey in MODELS) {
         setModelKey(modelKey);
         const config = MODELS[modelKey];
+        context.setInput('');
         toast.success(`Switched to ${config.displayName}`);
       } else {
         toast.error(`Invalid model: ${modelKey}`);
@@ -600,6 +607,11 @@ export function getCommandSuggestions(
   if (selectionMode === 'select' && selectedMessage) {
     const messageActionCommands = ['edit', 'copy', 'delete', 'regenerate', 'branch'];
 
+    // Get available actions for this message type
+    const availableActions = selectedMessage.role === 'user'
+      ? ['edit', 'copy', 'delete']
+      : ['copy', 'regenerate', 'branch'];
+
     // Only show message action commands that are valid for the selected message type
     commands = commands.filter(cmd => {
       if (!messageActionCommands.includes(cmd.command)) {
@@ -608,13 +620,28 @@ export function getCommandSuggestions(
       }
 
       // Filter message action commands based on message type
-      if (selectedMessage.role === 'user') {
-        return ['edit', 'copy', 'delete'].includes(cmd.command);
-      } else if (selectedMessage.role === 'assistant') {
-        return ['copy', 'regenerate', 'branch'].includes(cmd.command);
-      }
+      return availableActions.includes(cmd.command);
+    });
 
-      return false;
+    if (!query) return commands;
+
+    const lowerQuery = query.toLowerCase();
+
+    // Prioritize available actions in selection mode
+    const filteredCommands = commands.filter(cmd =>
+      cmd.command.startsWith(lowerQuery) ||
+      cmd.aliases?.some(alias => alias.startsWith(lowerQuery)) ||
+      cmd.description.toLowerCase().includes(lowerQuery)
+    );
+
+    // Sort so available actions come first
+    return filteredCommands.sort((a, b) => {
+      const aIsAvailable = availableActions.includes(a.command);
+      const bIsAvailable = availableActions.includes(b.command);
+
+      if (aIsAvailable && !bIsAvailable) return -1;
+      if (!aIsAvailable && bIsAvailable) return 1;
+      return 0;
     });
   } else {
     // When not in selection mode, hide individual message action commands
@@ -658,7 +685,36 @@ export async function executeSlashCommand(
     return { success: false, message: "Invalid command format" };
   }
 
-  const command = findCommand(parsed.command);
+  let command = findCommand(parsed.command);
+
+  // Smart auto-completion in selection mode
+  if (!command && context.messages && context.selectedMessageIndex !== undefined) {
+    const selectedMessage = context.messages[context.selectedMessageIndex];
+    if (selectedMessage) {
+      // Get available actions for this message type
+      const availableActions = selectedMessage.role === 'user'
+        ? ['edit', 'copy', 'delete']
+        : ['copy', 'regenerate', 'branch'];
+
+      // Find available commands that start with the typed command
+      const matchingCommands = availableActions
+        .map(action => findCommand(action))
+        .filter(cmd => cmd && cmd.command.startsWith(parsed.command.toLowerCase()));
+
+      if (matchingCommands.length === 1) {
+        // Auto-complete to the single matching available command
+        command = matchingCommands[0];
+        toast.success(`Auto-completed /${parsed.command} → /${command.command}`);
+      } else if (matchingCommands.length > 1) {
+        const commandNames = matchingCommands.map(cmd => cmd!.command).join(', /');
+        return {
+          success: false,
+          message: `Ambiguous command: /${parsed.command}. Available: /${commandNames}`
+        };
+      }
+    }
+  }
+
   if (!command) {
     return { success: false, message: `Unknown command: /${parsed.command}` };
   }
