@@ -1,10 +1,9 @@
 import { shareChatAction } from "@/actions";
-import { toggleWebSearch, setModelKey } from "@/lib/stores/chat";
-import { ModelKey, MODELS, getAvailableModels } from "@/lib/model-registry";
-import { NextRouter } from "next/router";
+import { signOut } from "@/lib/auth-client";
+import { getAvailableModels, ModelKey, MODELS } from "@/lib/model-registry";
+import { setModelKey, toggleWebSearch } from "@/lib/stores/chat";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { toast } from "sonner";
-import { signOut } from "@/lib/auth-client";
 
 export interface CommandArg {
   name: string;
@@ -45,8 +44,13 @@ export const CORE_COMMANDS: SlashCommand[] = [
     aliases: ['h'],
     description: 'Open chat history',
     category: 'navigation',
-    handler: (args, { setHistoryOpen }) => {
+    handler: (args, { setHistoryOpen, setInput, setActiveCommand, setShowCommandSuggestions }) => {
       setHistoryOpen(true);
+
+      // Clear input and command state after opening history
+      setInput('');
+      if (setActiveCommand) setActiveCommand(null);
+      if (setShowCommandSuggestions) setShowCommandSuggestions(false);
     }
   },
   {
@@ -69,7 +73,7 @@ export const CORE_COMMANDS: SlashCommand[] = [
         toast.error("No active chat to share");
         return;
       }
-      
+
       if (!messageCount || messageCount < 2) {
         toast.error("Chat must have at least 2 messages to share");
         return;
@@ -130,16 +134,16 @@ export const CORE_COMMANDS: SlashCommand[] = [
       }
     }
   },
-  {
+    {
     command: 'upload',
     description: 'Upload image or PDF file',
     category: 'utility',
-    handler: (args, { onFileUpload, supportedFileTypes }) => {
+    handler: (args, { onFileUpload, supportedFileTypes, setInput, setActiveCommand, setShowCommandSuggestions }) => {
       if (!onFileUpload) {
         toast.error("File upload not available");
         return;
       }
-      
+
       if (!supportedFileTypes || supportedFileTypes.length === 0) {
         toast.error("No file types supported for current model");
         return;
@@ -154,6 +158,11 @@ export const CORE_COMMANDS: SlashCommand[] = [
         if (target.files && target.files[0]) {
           onFileUpload(target.files[0]);
           toast.success("File uploaded successfully");
+
+          // Clear input and command state after successful file upload
+          setInput('');
+          if (setActiveCommand) setActiveCommand(null);
+          if (setShowCommandSuggestions) setShowCommandSuggestions(false);
         }
       };
       input.click();
@@ -169,11 +178,11 @@ export const ADVANCED_COMMANDS: SlashCommand[] = [
     description: 'Switch AI model',
     category: 'settings',
     args: [
-      { 
-        name: 'model_name', 
-        type: 'string', 
+      {
+        name: 'model_name',
+        type: 'string',
         required: false,
-        description: 'Model name or alias (e.g., gpt-4.1-mini, o4-mini)' 
+        description: 'Model name or alias (e.g., gpt-4.1-mini, o4-mini)'
       }
     ],
     handler: (args, context) => {
@@ -184,13 +193,13 @@ export const ADVANCED_COMMANDS: SlashCommand[] = [
           context.setInput('/model ');
           return;
         }
-        
+
         // Fallback: show available models as text
         const models = getAvailableModels();
         const modelList = models
           .map(({ key, config }) => `• ${key} - ${config.displayName}`)
           .join('\n');
-        
+
         context.setInput(`Available models:\n${modelList}\n\nUse: /model <model_name>`);
         return;
       }
@@ -205,20 +214,18 @@ export const ADVANCED_COMMANDS: SlashCommand[] = [
       }
     }
   },
-  {
+    {
     command: 'web',
     description: 'Enable web search for next query',
     category: 'settings',
     handler: (args, { setInput, setActiveCommand, setShowCommandSuggestions }) => {
-      // Enable web search using the same function as the button
+      // Enable web search immediately
       toggleWebSearch();
-      
-      // Clear all command state so user can type normal query
+
+      // Clear the input and command state
+      setInput('');
       if (setActiveCommand) setActiveCommand(null);
       if (setShowCommandSuggestions) setShowCommandSuggestions(false);
-      
-      // Clear the input so user can type their actual query
-      setInput('');
     }
   }
 ];
@@ -244,27 +251,27 @@ export function parseSlashCommand(input: string): { command: string; args: strin
 }
 
 export function findCommand(commandName: string): SlashCommand | null {
-  return ALL_COMMANDS.find(cmd => 
-    cmd.command === commandName || 
+  return ALL_COMMANDS.find(cmd =>
+    cmd.command === commandName ||
     cmd.aliases?.includes(commandName)
   ) || null;
 }
 
 export function getCommandSuggestions(query: string, isStreaming?: boolean, messageCount?: number): SlashCommand[] {
   let commands = ALL_COMMANDS;
-  
+
   // Only show /stop command when streaming
   if (!isStreaming) {
     commands = commands.filter(cmd => cmd.command !== 'stop');
   }
-  
+
   // Only show /new command when there are messages (at least 2: 1 user + 1 AI)
   if (!messageCount || messageCount < 2) {
     commands = commands.filter(cmd => cmd.command !== 'new');
   }
-  
+
   if (!query) return commands;
-  
+
   const lowerQuery = query.toLowerCase();
   return commands.filter(cmd =>
     cmd.command.startsWith(lowerQuery) ||
@@ -291,7 +298,7 @@ export function validateCommand(command: SlashCommand, args: string[], context: 
 }
 
 export async function executeSlashCommand(
-  input: string, 
+  input: string,
   context: CommandContext
 ): Promise<{ success: boolean; message?: string }> {
   const parsed = parseSlashCommand(input);
@@ -314,9 +321,9 @@ export async function executeSlashCommand(
     return { success: true };
   } catch (error) {
     console.error(`Command execution error for /${command.command}:`, error);
-    return { 
-      success: false, 
-      message: `Failed to execute /${command.command}` 
+    return {
+      success: false,
+      message: `Failed to execute /${command.command}`
     };
   }
 }
