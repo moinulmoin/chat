@@ -52,6 +52,14 @@ function ChatClient({
   const webSearch = useStore(webSearchAtom);
   const [uploadedAttachment, setUploadedAttachment] = useState<UploadedAttachment | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+
+  // Unified message selection state
+  const [selectionMode, setSelectionMode] = useState<'select' | null>(null);
+  const [selectedMessageIndex, setSelectedMessageIndex] = useState<number>(-1); // Index in messages array
+  const [isInlineEditing, setIsInlineEditing] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [regenerateMode, setRegenerateMode] = useState<string | null>(null); // messageId to regenerate
+
   const finalModelKey = modelKeyFromStore;
   const {
     messages,
@@ -245,6 +253,11 @@ function ChatClient({
     });
   }, []);
 
+  const exitEditingMode = useCallback(() => {
+    setIsInlineEditing(false);
+    setEditingMessageId(null);
+  }, []);
+
   return (
     <>
       {/* Chat Messages */}
@@ -252,17 +265,45 @@ function ChatClient({
         {messages.length === 0 ? (
           <EmptyState onQuestionClick={(question) => setInput(question)} />
         ) : (
-          messages.map((message) => (
-            <MemoizedChatMessage
-              key={message.id}
-              message={message}
-              status={status}
-              handleRegenerate={handleRegenerate}
-              selectedModelKey={finalModelKey}
-              handleUserMessageDelete={handleUserMessageDelete}
-              handleUserMessageSave={handleUserMessageSave}
-            />
-          ))
+                    messages.map((message, index) => {
+            // Calculate message numbers for user and AI messages separately
+            const userMessages = messages.filter(m => m.role === 'user');
+            const aiMessages = messages.filter(m => m.role === 'assistant');
+
+            let messageNumber = 0;
+            if (message.role === 'user') {
+              messageNumber = userMessages.findIndex(m => m.id === message.id) + 1;
+            } else if (message.role === 'assistant') {
+              messageNumber = aiMessages.findIndex(m => m.id === message.id) + 1;
+            }
+
+            // Check if this message is selected (using array index)
+            const isSelected = selectionMode === 'select' && selectedMessageIndex === index;
+
+            // Get available actions for this message type
+            const availableActions = message.role === 'user'
+              ? ['edit', 'copy', 'delete']
+              : ['copy', 'regenerate', 'branch'];
+
+            return (
+              <MemoizedChatMessage
+                key={message.id}
+                message={message}
+                messageNumber={messageNumber}
+                messageIndex={index}
+                isSelected={isSelected}
+                selectionMode={selectionMode}
+                availableActions={availableActions}
+                isEditing={editingMessageId === message.id}
+                status={status}
+                handleRegenerate={handleRegenerate}
+                selectedModelKey={finalModelKey}
+                handleUserMessageDelete={handleUserMessageDelete}
+                handleUserMessageSave={handleUserMessageSave}
+                exitEditingMode={exitEditingMode}
+              />
+            );
+          })
         )}
       </ChatMessageContainer>
 
@@ -280,6 +321,19 @@ function ChatClient({
         onRemoveAttachment={handleRemoveAttachment}
         chatId={chatId}
         setHistoryOpen={setHistoryOpen}
+        selectionMode={selectionMode}
+        selectedMessageIndex={selectedMessageIndex}
+        setSelectionMode={setSelectionMode}
+        setSelectedMessageIndex={setSelectedMessageIndex}
+        messages={messages}
+        handleUserMessageDelete={handleUserMessageDelete}
+        handleUserMessageSave={handleUserMessageSave}
+        handleRegenerate={handleRegenerate}
+        setIsInlineEditing={setIsInlineEditing}
+        setEditingMessageId={setEditingMessageId}
+        exitEditingMode={exitEditingMode}
+        regenerateMode={regenerateMode}
+        setRegenerateMode={setRegenerateMode}
       />
 
       {/* Text Selection Context Menu */}

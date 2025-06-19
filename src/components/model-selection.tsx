@@ -1,8 +1,8 @@
 "use client";
 
 import { Command, CommandItem, CommandList } from "@/components/ui/command";
-import { getAvailableModels, ModelKey, MODELS } from "@/lib/model-registry";
 import { GeminiIcon, Grok, Groq, OpenAI } from "@/lib/brand-icons";
+import { getAvailableModels, ModelKey, MODELS } from "@/lib/model-registry";
 import { Brain, Check, FileText, Image, ImagePlus } from "lucide-react";
 import { useEffect, useRef } from "react";
 
@@ -11,6 +11,8 @@ interface ModelSelectionProps {
   onSelect: (modelKey: ModelKey) => void;
   visible: boolean;
   currentModelKey: ModelKey;
+  mode?: 'model' | 'regenerate';
+  regenerateMessageId?: string | null;
 }
 
 function getProviderIcon(provider: string) {
@@ -28,14 +30,16 @@ function getProviderIcon(provider: string) {
   }
 }
 
-export function ModelSelection({ 
-  selectedIndex, 
-  onSelect, 
+export function ModelSelection({
+  selectedIndex,
+  onSelect,
   visible,
-  currentModelKey
+  currentModelKey,
+  mode = 'model',
+  regenerateMessageId
 }: ModelSelectionProps) {
   const selectedItemRef = useRef<HTMLDivElement>(null);
-  
+
   // Scroll selected item into view
   useEffect(() => {
     if (selectedItemRef.current) {
@@ -45,7 +49,7 @@ export function ModelSelection({
       });
     }
   }, [selectedIndex]);
-  
+
   if (!visible) return null;
 
   const availableModels = getAvailableModels();
@@ -54,7 +58,9 @@ export function ModelSelection({
     <div className="absolute bottom-full left-0 right-0 mb-2 z-50">
       <Command className="rounded-lg border shadow-lg bg-background/95 backdrop-blur-sm">
         <div className="p-2 border-b">
-          <h3 className="text-sm font-medium">Select AI Model</h3>
+          <h3 className="text-sm font-medium">
+            {mode === 'regenerate' ? 'Select Model for Regeneration' : 'Select AI Model'}
+          </h3>
         </div>
         <CommandList className="max-h-64 p-1">
           {availableModels.map((model, index) => {
@@ -65,8 +71,8 @@ export function ModelSelection({
                 ref={index === selectedIndex ? selectedItemRef : null}
                 onSelect={() => onSelect(model.key)}
                 className={`flex items-center justify-between px-3 py-2 rounded-md cursor-pointer transition-colors ${
-                  index === selectedIndex 
-                    ? 'bg-accent text-accent-foreground' 
+                  index === selectedIndex
+                    ? 'bg-accent text-accent-foreground'
                     : 'hover:bg-accent/50'
                 }`}
               >
@@ -81,7 +87,7 @@ export function ModelSelection({
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1">
                     {config.capabilities.thinking && (
@@ -104,7 +110,7 @@ export function ModelSelection({
               </CommandItem>
             );
           })}
-          
+
           <div className="px-3 py-1 text-xs text-muted-foreground border-t mt-1 pt-2">
             <div className="flex items-center justify-between">
               <span>Use ↑↓ to navigate, Enter to select, Esc to cancel</span>

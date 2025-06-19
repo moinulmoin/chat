@@ -42,6 +42,23 @@ interface ChatInputProps {
   onRemoveAttachment: () => void;
   chatId?: string;
   setHistoryOpen: (open: boolean) => void;
+  // Unified message selection props
+  selectionMode?: 'select' | null;
+  selectedMessageIndex?: number;
+  setSelectionMode?: (mode: 'select' | null) => void;
+  setSelectedMessageIndex?: (index: number) => void;
+  messages?: any[];
+  // Message action handlers
+  handleUserMessageDelete?: ({ messageId }: { messageId: string }) => void;
+  handleUserMessageSave?: ({ messageId, editedText }: { messageId: string; editedText: string }) => void;
+  handleRegenerate?: ({ messageId, modelKey }: { messageId: string; modelKey?: any }) => void;
+  // Inline editing state
+  setIsInlineEditing?: (editing: boolean) => void;
+  setEditingMessageId?: (messageId: string | null) => void;
+  exitEditingMode?: () => void;
+  // Model selection for regenerate
+  regenerateMode?: string | null;
+  setRegenerateMode?: (messageId: string | null) => void;
 }
 
 export function ChatInput({
@@ -56,7 +73,20 @@ export function ChatInput({
   uploadedAttachment,
   onRemoveAttachment,
   chatId,
-  setHistoryOpen
+  setHistoryOpen,
+  selectionMode,
+  selectedMessageIndex,
+  setSelectionMode,
+  setSelectedMessageIndex,
+  messages,
+  handleUserMessageDelete,
+  handleUserMessageSave,
+  handleRegenerate,
+  setIsInlineEditing,
+  setEditingMessageId,
+  exitEditingMode,
+  regenerateMode,
+  setRegenerateMode
 }: ChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -98,13 +128,19 @@ export function ChatInput({
       if (value.startsWith("/")) {
         if (value === "/") {
           // Show all commands when user types just "/"
-          const suggestions = getCommandSuggestions("", isStreaming, messageCount);
+          const selectedMessage = messages && selectedMessageIndex !== undefined && selectedMessageIndex >= 0 && selectedMessageIndex < messages.length
+            ? messages[selectedMessageIndex]
+            : undefined;
+          const suggestions = getCommandSuggestions("", isStreaming, messageCount, selectionMode, selectedMessage);
           setCommandSuggestions(suggestions);
           setShowCommandSuggestions(true);
           setSelectedCommandIndex(0);
         } else if (value.length > 1) {
           const query = value.slice(1).toLowerCase().split(" ")[0];
-          const suggestions = getCommandSuggestions(query, isStreaming, messageCount);
+          const selectedMessage = messages && selectedMessageIndex !== undefined && selectedMessageIndex >= 0 && selectedMessageIndex < messages.length
+            ? messages[selectedMessageIndex]
+            : undefined;
+          const suggestions = getCommandSuggestions(query, isStreaming, messageCount, selectionMode, selectedMessage);
           setCommandSuggestions(suggestions);
           setShowCommandSuggestions(suggestions.length > 0);
           setSelectedCommandIndex(0);
@@ -114,7 +150,7 @@ export function ChatInput({
         setCommandSuggestions([]);
       }
     },
-    [isStreaming, messageCount]
+    [isStreaming, messageCount, selectionMode, selectedMessageIndex, messages]
   );
 
   // Execute slash command
@@ -132,7 +168,18 @@ export function ChatInput({
         onFileUpload,
         supportedFileTypes,
         setActiveCommand,
-        setShowCommandSuggestions
+        setShowCommandSuggestions,
+        setSelectionMode,
+        setSelectedMessageIndex,
+        selectedMessageIndex,
+        messages,
+        handleUserMessageDelete,
+        handleUserMessageSave,
+        handleRegenerate,
+        setIsInlineEditing,
+        setEditingMessageId,
+        exitEditingMode,
+        setRegenerateMode
       };
 
       const result = await executeSlashCommand(input, context);
@@ -152,7 +199,18 @@ export function ChatInput({
       onFileUpload,
       supportedFileTypes,
       setActiveCommand,
-      setShowCommandSuggestions
+      setShowCommandSuggestions,
+      setSelectionMode,
+      setSelectedMessageIndex,
+      selectedMessageIndex,
+      messages,
+      handleUserMessageDelete,
+      handleUserMessageSave,
+      handleRegenerate,
+      setIsInlineEditing,
+      setEditingMessageId,
+      exitEditingMode,
+      setRegenerateMode
     ]
   );
 
@@ -192,12 +250,24 @@ export function ChatInput({
   // Handle model selection
   const selectModel = useCallback(
     (modelKey: ModelKey) => {
-      handleModelChange(modelKey);
-      setShowModelSelection(false);
-      setActiveCommand(null);
-      setInput("");
+      if (regenerateMode && handleRegenerate) {
+        // Regenerate mode: use selected model to regenerate the message
+        handleRegenerate({ messageId: regenerateMode, modelKey });
+        setRegenerateMode && setRegenerateMode(null);
+        setSelectionMode && setSelectionMode(null);
+        setShowModelSelection(false);
+        setActiveCommand(null);
+        setInput("");
+        toast.success(`Regenerating with ${MODELS[modelKey].displayName}...`);
+      } else {
+        // Regular model selection: switch current model
+        handleModelChange(modelKey);
+        setShowModelSelection(false);
+        setActiveCommand(null);
+        setInput("");
+      }
     },
-    [handleModelChange]
+    [handleModelChange, regenerateMode, handleRegenerate, setRegenerateMode, setSelectionMode]
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,6 +302,8 @@ export function ChatInput({
             onSelect={selectModel}
             visible={showModelSelection}
             currentModelKey={modelKey}
+            mode={regenerateMode ? 'regenerate' : 'model'}
+            regenerateMessageId={regenerateMode}
           />
 
           <div className="rounded-2xl p-2 border shadow-sm bg-background">
@@ -253,9 +325,59 @@ export function ChatInput({
                   activeCommand ? "font-mono" : ""
                 }`}
                 rows={1}
-                onKeyDown={(e) => {
-                  // Handle model selection navigation
-                  if (showModelSelection) {
+                              onKeyDown={(e) => {
+                                // Handle message selection navigation
+                if (selectionMode === 'select') {
+                  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (!messages || messages.length === 0) return;
+
+                    const direction = e.key === 'ArrowUp' ? -1 : 1;
+                    const currentIndex = selectedMessageIndex ?? messages.length - 1;
+
+                    // Wrap around navigation: top wraps to bottom, bottom wraps to top
+                    let newIndex = currentIndex + direction;
+                    if (newIndex < 0) {
+                      newIndex = messages.length - 1; // Wrap to last message
+                    } else if (newIndex >= messages.length) {
+                      newIndex = 0; // Wrap to first message
+                    }
+
+                    if (setSelectedMessageIndex) {
+                      setSelectedMessageIndex(newIndex);
+
+                      // Scroll selected message into view
+                      setTimeout(() => {
+                        const messageElements = document.querySelectorAll('[data-message-index]');
+                        const selectedElement = Array.from(messageElements).find(
+                          el => el.getAttribute('data-message-index') === newIndex.toString()
+                        );
+                        if (selectedElement) {
+                          selectedElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                          });
+                        }
+                      }, 50);
+                    }
+                    return;
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    if (setSelectionMode) setSelectionMode(null);
+                    toast.success("Exited selection mode");
+                    return;
+                  }
+                  // Allow typing commands while in selection mode
+                  if (e.key === 'Enter' && !e.shiftKey && input.startsWith('/')) {
+                    e.preventDefault();
+                    executeCommand(input);
+                    return;
+                  }
+                }
+
+                // Handle model selection navigation
+                if (showModelSelection) {
                     const availableModels = getAvailableModels();
                     if (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey)) {
                       e.preventDefault();
@@ -430,7 +552,14 @@ export function ChatInput({
                     Web Search
                   </div>
                 )}
-                              <div className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded-md">
+                                            {/* Selection mode indicator */}
+              {selectionMode === 'select' && messages && selectedMessageIndex !== undefined && selectedMessageIndex >= 0 && selectedMessageIndex < messages.length && (
+                <div className="text-xs text-blue-600 font-mono bg-blue-100 px-2 py-1 rounded-md">
+                  {selectedMessageIndex + 1} of {messages.length}
+                </div>
+              )}
+
+              <div className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded-md">
                 {MODELS[modelKey].displayName}
               </div>
               </div>

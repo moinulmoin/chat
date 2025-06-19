@@ -43,6 +43,12 @@ import { useSWRConfig } from "swr";
 
 interface ChatMessageProps {
   message: Message;
+  messageNumber: number;
+  messageIndex: number;
+  isSelected?: boolean;
+  isEditing?: boolean;
+  selectionMode?: 'select' | null;
+  availableActions?: string[];
   status: "submitted" | "streaming" | "ready" | "error";
   selectedModelKey: ModelKey;
   handleRegenerate: ({ messageId, modelKey }: { messageId: string; modelKey?: ModelKey }) => void;
@@ -54,6 +60,7 @@ interface ChatMessageProps {
     editedText: string;
   }) => void;
   handleUserMessageDelete: ({ messageId }: { messageId: string }) => void;
+  exitEditingMode?: () => void;
 }
 
 function WebSearchLoading() {
@@ -104,10 +111,17 @@ const getProviderIcon = (provider: string) => {
 
 function ChatMessage({
   message,
+  messageNumber,
+  messageIndex,
+  isSelected,
+  isEditing,
+  selectionMode,
+  availableActions,
   status,
   handleRegenerate,
   handleUserMessageSave,
-  handleUserMessageDelete
+  handleUserMessageDelete,
+  exitEditingMode
 }: ChatMessageProps) {
   console.log(message);
   const router = useRouter();
@@ -128,7 +142,6 @@ function ChatMessage({
   const userText = message?.parts?.map((part) => (part.type === "text" ? part.text : "")).join("");
 
   // Local state for editing user messages
-  const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(userText);
 
   // Keep editedText in sync when message changes (e.g., after save)
@@ -140,11 +153,11 @@ function ChatMessage({
 
   const handleSave = (editedText: string) => {
     if (userText === editedText) {
-      setIsEditing(false);
+      if (exitEditingMode) exitEditingMode();
       return;
     }
     handleUserMessageSave({ messageId: message.id!, editedText });
-    setIsEditing(false);
+    if (exitEditingMode) exitEditingMode();
   };
 
   const attachments =
@@ -192,7 +205,7 @@ function ChatMessage({
   if (message.role === "user") {
     if (isEditing) {
       return (
-        <div className="flex justify-end">
+        <div className="flex justify-end" data-message-index={messageIndex}>
           <div className="flex flex-col gap-2 max-w-2xl">
             <textarea
               className="w-full p-2 text-sm border border-primary/20 rounded-md resize-none"
@@ -205,7 +218,7 @@ function ChatMessage({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setIsEditing(false);
+                  if (exitEditingMode) exitEditingMode();
                   setEditedText(userText);
                 }}
               >
@@ -221,8 +234,25 @@ function ChatMessage({
     }
 
     return (
-      <div className="flex justify-end">
-        <div className="flex flex-col gap-2 max-w-2xl group relative items-end">
+      <div className="flex justify-end" data-message-index={messageIndex}>
+        <div className={`flex flex-col gap-2 max-w-2xl group relative items-end ${
+          isSelected ? 'ring-2 ring-yellow-400 ring-opacity-50 rounded-lg p-2 bg-yellow-50/50' : ''
+        }`}>
+                    {/* Message number badge - only show when selected or in selection mode */}
+          {(isSelected || selectionMode === 'select') && (
+            <div className={`text-xs font-mono px-2 py-1 rounded-md self-end transition-all ${
+              isSelected
+                ? 'bg-yellow-200 text-yellow-800'
+                : 'text-muted-foreground/70 bg-muted/50'
+            }`}>
+              U-{messageNumber}
+              {isSelected && availableActions && (
+                <span className="ml-2 text-xs">
+                  Available: /{availableActions.join(', /')}
+                </span>
+              )}
+            </div>
+          )}
           <div className="px-4 py-2 rounded-2xl max-w-fit bg-background border">
             <p className="text-sm">{userText}</p>
           </div>
@@ -305,8 +335,25 @@ function ChatMessage({
   }, [message.parts]);
 
   return (
-    <div className="flex justify-start flex-col group" data-role="assistant">
-      <div className="flex flex-col gap-2 max-w-2xl">
+    <div className="flex justify-start flex-col group" data-role="assistant" data-message-index={messageIndex}>
+      <div className={`flex flex-col gap-2 max-w-2xl ${
+        isSelected ? 'ring-2 ring-yellow-400 ring-opacity-50 rounded-lg p-2 bg-yellow-50/50' : ''
+      }`}>
+                {/* Message number badge - only show when selected or in selection mode */}
+        {(isSelected || selectionMode === 'select') && (
+          <div className={`text-xs font-mono px-2 py-1 rounded-md self-start transition-all ${
+            isSelected
+              ? 'bg-yellow-200 text-yellow-800'
+              : 'text-muted-foreground/70 bg-muted/50'
+          }`}>
+            A-{messageNumber}
+            {isSelected && availableActions && (
+              <span className="ml-2 text-xs">
+                Available: /{availableActions.join(', /')}
+              </span>
+            )}
+          </div>
+        )}
         {/* Show reasoning/thinking section for assistant messages */}
         {(() => {
           const reasoningParts = message.parts?.filter((part: any) => part.type === "reasoning");

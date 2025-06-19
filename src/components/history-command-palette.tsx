@@ -145,35 +145,38 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
     <CommandDialog
       open={open}
       onOpenChange={onOpenChange}
-      className="max-w-2xl rounded-2xl border-0 bg-white/95 backdrop-blur-sm shadow-2xl"
+      className="max-w-2xl rounded-2xl border shadow-2xl bg-background"
     >
-      <div className="border-b border-border/10">
-        <CommandInput
-          placeholder="Search chat history..."
-          value={query}
-          onValueChange={setQuery}
-          className="px-4 py-3 border-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-muted-foreground/60 text-base"
-        />
+      <div className="border-b border-border/20">
+        <div className="flex items-center px-4 py-3">
+          <span className="text-primary font-mono text-sm mr-2">$</span>
+          <CommandInput
+            placeholder="search chat history..."
+            value={query}
+            onValueChange={setQuery}
+            className="border-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-muted-foreground/60 text-base font-mono"
+          />
+        </div>
       </div>
       <CommandList
         style={{ height: "400px" }}
         className="p-1"
       >
         {isLoading && !chats.length && (
-          <CommandItem disabled className="p-8 text-sm text-center text-muted-foreground justify-center">
-            Loading...
+          <CommandItem disabled className="p-8 text-sm text-center text-muted-foreground justify-center font-mono">
+            // Loading chat history...
           </CommandItem>
         )}
-        {!isLoading && <CommandEmpty className="py-8 text-muted-foreground">No results found.</CommandEmpty>}
+        {!isLoading && <CommandEmpty className="py-8 text-muted-foreground font-mono">// No chats found</CommandEmpty>}
         {items.map((item) => {
           if (item.type === "header") {
             return (
               <CommandItem
                 key={item.label}
                 disabled
-                className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider !bg-transparent cursor-default"
+                className="px-4 py-2 text-xs font-mono text-muted-foreground/80 !bg-transparent cursor-default"
               >
-                {item.label}
+                // {item.label.toLowerCase()}
               </CommandItem>
             );
           }
@@ -208,15 +211,15 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
                   />
                 ) : (
                   <span className="font-medium text-foreground truncate">
-                    {chat.title || "New Chat"}
+                    {chat.title || "untitled chat"}
                   </span>
                 )}
               </div>
 
               <div className="flex items-center gap-1">
                 {/* Timestamp - visible by default, hidden on hover */}
-                <span className="text-xs text-muted-foreground group-hover:opacity-0 transition-opacity duration-200 min-w-fit">
-                  {relativeTime} ago
+                <span className="text-xs font-mono text-muted-foreground/60 group-hover:opacity-0 transition-opacity duration-200 min-w-fit">
+                  {relativeTime}
                 </span>
 
                 {editingChatId === chat.id ? (
