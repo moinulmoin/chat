@@ -21,10 +21,10 @@ export function NewChatButton() {
   };
 
   // Keyboard shortcut for new chat
-  useHotkeys('ctrl+c, meta+c', handleNewChat, {
+  useHotkeys("ctrl+c, meta+c", handleNewChat, {
     preventDefault: true,
     enabled: shouldShow,
-    description: 'Open new chat'
+    description: "Open new chat"
   });
 
   if (!shouldShow) {

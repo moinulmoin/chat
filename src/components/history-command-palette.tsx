@@ -7,7 +7,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
-  VirtualizedCommandList,
+  VirtualizedCommandList
 } from "@/components/ui/command";
 import { IconButton } from "@/components/ui/icon-button";
 import { Chat } from "@/generated/prisma";
@@ -142,16 +142,8 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
   }, [chats]);
 
   return (
-    <CommandDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      className="max-w-2xl"
-    >
-      <CommandInput
-        placeholder="Search chat history..."
-        value={query}
-        onValueChange={setQuery}
-      />
+    <CommandDialog open={open} onOpenChange={onOpenChange} className="max-w-2xl">
+      <CommandInput placeholder="Search chat history..." value={query} onValueChange={setQuery} />
       <VirtualizedCommandList
         style={{ height: "600px" }}
         count={items.length}
@@ -159,9 +151,7 @@ export function HistoryCommandPalette({ open, onOpenChange }: HistoryCommandPale
         onScroll={handleScroll}
         overscan={4}
       >
-        {isLoading && !chats.length && (
-          <div className="p-4 text-sm text-center">Loading...</div>
-        )}
+        {isLoading && !chats.length && <div className="p-4 text-sm text-center">Loading...</div>}
         {!isLoading && <CommandEmpty>No results found.</CommandEmpty>}
         {items.map((item) => {
           if (item.type === "header") {
