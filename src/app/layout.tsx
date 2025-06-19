@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "t0Chat",
-  description: "t0Chat is the open source alternative to t3.chat. The best way to chat with AI."
+  title: "/chat",
+  description: "/chat - Where conversations begin with /. Navigate with slash commands, not mouse clicks."
 };
 
 export default function RootLayout({

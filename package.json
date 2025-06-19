@@ -1,5 +1,5 @@
 {
-  "name": "t0chat",
+  "name": "/chat",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -23,6 +23,7 @@
     "@prisma/client": "^6.10.0",
     "@prisma/extension-accelerate": "^2.0.1",
     "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-hover-card": "^1.1.14",
     "@tailwindcss/typography": "^0.5.16",
     "@tavily/core": "^0.5.7",
     "@vercel/blob": "^1.1.1",

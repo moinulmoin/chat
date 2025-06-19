@@ -19,28 +19,23 @@ import { mutate } from "swr";
 import { ChatInput } from "./chat-input";
 import { MemoizedChatMessage } from "./chat-message";
 import ChatMessageContainer from "./chat-message-container";
+import { HistoryCommandPalette } from "./history-command-palette";
 import { TextSelectionMenu } from "./text-selection-menu";
-
-const STARTER_QUESTIONS = [
-  "Generate creative ideas for a project",
-  "Explain the concept of AI",
-  "Help me write a professional email"
-];
 
 function EmptyState({ onQuestionClick }: { onQuestionClick: (question: string) => void }) {
   return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[60vh] text-center">
-      <h2 className="text-xl font-medium mb-4">How can I help you today?</h2>
+    <div className="flex flex-col items-center justify-center h-full min-h-[60vh] text-center space-y-4">
       <div className="space-y-2">
-        {STARTER_QUESTIONS.map((question, index) => (
-          <button
-            key={index}
-            onClick={() => onQuestionClick(question)}
-            className="block text-sm text-muted-foreground hover:text-foreground cursor-pointer"
-          >
-            {question}
-          </button>
-        ))}
+        <h2 className="text-lg font-medium">Welcome to /chat</h2>
+        <p className="text-sm text-muted-foreground">
+          Where conversations begin with /
+        </p>
+      </div>
+
+      <div className="space-y-1 text-sm font-mono text-muted-foreground/80">
+        <div>Type <span className="text-primary">/</span> for commands</div>
+        <div>Press <span className="text-primary">↑↓</span> to navigate</div>
+        <div>Hit <span className="text-primary">Enter</span> to execute</div>
       </div>
     </div>
   );
@@ -56,6 +51,18 @@ function ChatClient({
   const modelKeyFromStore = useStore(currentModelKeyAtom);
   const webSearch = useStore(webSearchAtom);
   const [uploadedAttachment, setUploadedAttachment] = useState<UploadedAttachment | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  // Unified message selection state
+  const [selectionMode, setSelectionMode] = useState<'select' | null>(null);
+  const [selectedMessageIndex, setSelectedMessageIndex] = useState<number>(-1); // Index in messages array
+  const [isInlineEditing, setIsInlineEditing] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [regenerateMode, setRegenerateMode] = useState<string | null>(null); // messageId to regenerate
+
+  // AI message section toggle state (messageId -> section -> isOpen)
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, { sources?: boolean; thinking?: boolean }>>({});
+
   const finalModelKey = modelKeyFromStore;
   const {
     messages,
@@ -249,24 +256,87 @@ function ChatClient({
     });
   }, []);
 
+  const exitEditingMode = useCallback(() => {
+    setIsInlineEditing(false);
+    setEditingMessageId(null);
+  }, []);
+
+  const handleToggleSources = useCallback(({ messageId }: { messageId: string }) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [messageId]: {
+        ...prev[messageId],
+        sources: !prev[messageId]?.sources
+      }
+    }));
+  }, []);
+
+  const handleToggleThinking = useCallback(({ messageId }: { messageId: string }) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [messageId]: {
+        ...prev[messageId],
+        thinking: !prev[messageId]?.thinking
+      }
+    }));
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 w-full">
+    <>
       {/* Chat Messages */}
       <ChatMessageContainer status={status}>
         {messages.length === 0 ? (
           <EmptyState onQuestionClick={(question) => setInput(question)} />
         ) : (
-          messages.map((message, i) => (
-            <MemoizedChatMessage
-              key={message.id}
-              message={message}
-              status={status}
-              handleRegenerate={handleRegenerate}
-              selectedModelKey={finalModelKey}
-              handleUserMessageDelete={handleUserMessageDelete}
-              handleUserMessageSave={handleUserMessageSave}
-            />
-          ))
+                    messages.map((message, index) => {
+            // Check if this message is selected (using array index)
+            const isSelected = selectionMode === 'select' && selectedMessageIndex === index;
+
+            // Get available actions for this message type
+            const availableActions = message.role === 'user'
+              ? ['copy', 'delmsg']
+              : (() => {
+                  const baseActions = ['copy', 'regenerate', 'branch'];
+
+                  // Check if message has sources (web search results)
+                  const hasSources = message.parts?.some((part: any) =>
+                    part.type === "tool-invocation" &&
+                    part.toolInvocation.toolName === "webSearch" &&
+                    part.toolInvocation.state === "result" &&
+                    Array.isArray(part.toolInvocation.result) &&
+                    part.toolInvocation.result.length > 0
+                  );
+
+                  // Check if message has thinking/reasoning
+                  const hasThinking = message.parts?.some((part: any) => part.type === "reasoning");
+
+                  if (hasSources) baseActions.push('togglesources');
+                  if (hasThinking) baseActions.push('togglethinking');
+
+                  return baseActions;
+                })();
+
+                          return (
+                <MemoizedChatMessage
+                  key={message.id}
+                  message={message}
+                  messageIndex={index}
+                  isSelected={isSelected}
+                  selectionMode={selectionMode}
+                  availableActions={availableActions}
+                  isEditing={editingMessageId === message.id}
+                  status={status}
+                  handleRegenerate={handleRegenerate}
+                  selectedModelKey={finalModelKey}
+                  handleUserMessageDelete={handleUserMessageDelete}
+                  handleUserMessageSave={handleUserMessageSave}
+                  exitEditingMode={exitEditingMode}
+                  collapsedSections={collapsedSections[message.id!] || {}}
+                  handleToggleSources={handleToggleSources}
+                  handleToggleThinking={handleToggleThinking}
+                />
+              );
+          })
         )}
       </ChatMessageContainer>
 
@@ -282,11 +352,34 @@ function ChatClient({
         onFileUpload={handleFileUpload}
         uploadedAttachment={uploadedAttachment}
         onRemoveAttachment={handleRemoveAttachment}
+        chatId={chatId}
+        setHistoryOpen={setHistoryOpen}
+        selectionMode={selectionMode}
+        selectedMessageIndex={selectedMessageIndex}
+        setSelectionMode={setSelectionMode}
+        setSelectedMessageIndex={setSelectedMessageIndex}
+        messages={messages}
+        handleUserMessageDelete={handleUserMessageDelete}
+        handleUserMessageSave={handleUserMessageSave}
+        handleRegenerate={handleRegenerate}
+        setIsInlineEditing={setIsInlineEditing}
+        setEditingMessageId={setEditingMessageId}
+        exitEditingMode={exitEditingMode}
+        regenerateMode={regenerateMode}
+        setRegenerateMode={setRegenerateMode}
+        handleToggleSources={handleToggleSources}
+        handleToggleThinking={handleToggleThinking}
       />
 
       {/* Text Selection Context Menu */}
       <TextSelectionMenu onAddToChat={handleAddToChat} onExplain={handleExplain} />
-    </div>
+
+      {/* History Command Palette */}
+      <HistoryCommandPalette
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+      />
+    </>
   );
 }
 

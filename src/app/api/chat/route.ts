@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
         const result = streamText({
           model: registry.languageModel(modelIdentifier),
           messages,
-          system: `You are a helpful assistant, powered by t0Chat.
+          system: `You are a helpful assistant, powered by /chat.
 Always reply in GitHub-Flavored Markdown (GFM) – no HTML.
 Use standard Markdown features (tables, blockquotes, headings, etc) where applicable.
 
