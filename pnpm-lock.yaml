@@ -131,6 +131,9 @@ importers:
       shadcn-prose:
         specifier: ^1.0.9
         version: 1.0.9
+      shiki:
+        specifier: ^3.6.0
+        version: 3.6.0
       sonner:
         specifier: ^2.0.5
         version: 2.0.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0)

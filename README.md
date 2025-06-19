@@ -1,10 +1,10 @@
-# /chat - Advanced AI Chat Interface
+# /chat - Where conversations begin with /
 
-> **The most feature-rich, multi-model AI chat application for power users and developers**
+> **Chat with AI models, with / commands**
 
 /chat is a sophisticated Next.js-based chat application that provides an unparalleled AI conversation experience with advanced features, multi-model support, and professional-grade capabilities.
 
-## 🚀 **Core Features**
+## �� **Core Features**
 
 ### **🤖 Multi-Model AI Support**
 - **8 Premium AI Models** across 4 leading providers:
